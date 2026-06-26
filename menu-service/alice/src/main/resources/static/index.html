@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canteen 午餐訂餐平台</title>
+  <link rel="stylesheet" href="/canteen-present.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              green: "#16a34a",
+              orange: "#f97316"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="present-ui present-student text-slate-800 flex flex-col min-h-screen">
+  <header class="student-header sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-green text-white flex items-center justify-center text-lg">🍴</div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-800">Canteen 午餐訂餐平台</h1>
+          <p class="text-xs text-slate-500">STUDENT / TEACHER 點餐主頁</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        <span id="periodBadge" class="period-badge px-3 py-1 rounded-full font-medium">訂購時段</span>
+        <!-- 未登入：顯示訪客標籤 + 登入/註冊按鈕 -->
+        <span id="guestArea" class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-sm">訪客</span>
+          <button type="button" onclick="openLoginModal()" class="px-3 py-1 rounded-lg border border-brand-green text-brand-green text-sm hover:bg-green-50">登入</button>
+          <button type="button" onclick="openRegisterModal()" class="px-3 py-1 rounded-lg bg-brand-green text-white text-sm hover:bg-green-700">註冊</button>
+        </span>
+        <!-- 已登入：顯示用戶資訊 + 錢包 + 登出 -->
+        <span id="loggedInArea" class="hidden items-center gap-2 text-slate-600">
+          <span id="userRoleBadge" class="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium"></span>
+          <span id="userDisplayName"></span>
+          <button type="button" id="walletBtn" onclick="openWalletModal()" class="hidden px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200 hover:bg-blue-100">💰 $<span id="walletBalance">--</span></button>
+          <button type="button" onclick="logout()" class="text-xs text-slate-400 hover:text-slate-600 underline">登出</button>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl mx-auto px-4 py-6 w-full lg:grid lg:grid-cols-12 lg:gap-6">
+    <section class="lg:col-span-8 space-y-6">
+      <div class="present-card p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="text-xl font-semibold text-slate-800">精選主食</h2>
+          <div class="flex items-center gap-2 text-sm text-slate-500">
+            <select class="border rounded-lg px-2 py-1 text-slate-600"><option>熱門推薦</option></select>
+            <span class="text-slate-400">|</span>
+            <span>▦ 格狀</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">Special Request（選項，可多選）</p>
+        <div id="dishList" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+      </div>
+
+      <div class="present-card p-4">
+        <h2 class="text-xl font-semibold text-slate-800 mb-4">飲品選擇</h2>
+        <div id="drinkList" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+      </div>
+    </section>
+
+    <aside class="lg:col-span-4 mt-6 lg:mt-0">
+      <div class="present-sidebar-panel lg:sticky lg:top-24 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-lg">購物車</h3>
+          <span id="cartCount" class="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700">0 件</span>
+        </div>
+        <div id="cartItems" class="space-y-2 max-h-72 overflow-auto pr-1"></div>
+        <div class="border-t border-slate-200 mt-4 pt-3 space-y-2">
+          <div class="flex justify-between text-sm">
+            <span>小計</span>
+            <span id="subtotal" class="font-medium">$0</span>
+          </div>
+          <button id="previewBtn" type="button" class="w-full present-btn-primary py-2.5 text-sm">
+            預覽訂單內容 →
+          </button>
+        </div>
+<!-- 查看全部訂單 -->
+        <div class="border-t border-slate-200 mt-4 pt-4">
+          <button type="button" onclick="openAllOrdersModal()"
+            class="w-full py-2 text-sm font-medium rounded-lg border border-green-200 text-brand-green hover:bg-green-50 transition-colors">
+            查看全部訂單 ›
+          </button>
+        </div>
+
+<div class="border-t border-slate-200 mt-4 pt-4">
+          <h3 class="font-semibold text-lg mb-2">我的訂單</h3>
+          <div id="orderStatusBanner" class="hidden mb-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800"></div>
+          <div id="myOrdersList" class="space-y-2 max-h-52 overflow-auto pr-1"></div>
+          <button id="viewAllOrdersBtn" type="button"
+            class="w-full mt-3 py-2 text-sm text-center text-brand-green hover:text-green-800 font-medium border border-green-200 rounded-lg hover:bg-green-50 transition-colors">
+            查看全部訂單 ›
+          </button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="mt-auto px-4 py-4 text-center">
+    <p>如有任何問題，請聯絡飯堂職員。</p>
+    <p class="mt-1">© Canteen 午餐訂餐平台 版權所有 · <a href="#" class="text-brand-green hover:underline">私隱政策</a></p>
+  </footer>
+
+  <!-- 全部訂單 Modal -->
+  <div id="allOrdersModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl p-5 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4 shrink-0">
+        <h4 class="text-xl font-semibold">我的全部訂單（今日）</h4>
+        <button type="button" id="closeAllOrdersModal" class="text-slate-500 hover:text-slate-700 text-lg leading-none">×</button>
+      </div>
+      <div id="allOrdersContent" class="space-y-3 overflow-y-auto pr-1 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- 訂單預覽 Modal -->
+  <div id="previewModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-2xl p-5">
+      <div class="flex justify-between items-center mb-4">
+        <h4 class="text-xl font-semibold">訂單預覽</h4>
+        <button id="closeModal" class="text-slate-500 hover:text-slate-700">關閉</button>
+      </div>
+      <div id="previewContent" class="space-y-2"></div>
+      <div class="mt-4 border-t pt-3 flex justify-between font-semibold">
+        <span>總計</span>
+        <span id="previewTotal">$0</span>
+      </div>
+      <button id="submitOrderBtn" type="button"
+        class="mt-4 w-full bg-brand-orange hover:bg-orange-600 text-white py-2 rounded-lg font-medium">
+        確認送出訂單
+      </button>
+    </div>
+  </div>
+
+  <!-- 登入 Modal -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl">
+      <div class="flex justify-between items-center mb-5">
+        <h4 class="text-lg font-semibold text-slate-800">登入</h4>
+        <button type="button" onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+      </div>
+      <div class="space-y-3">
+        <input id="loginPhone" type="tel" placeholder="電話號碼" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
+        <input id="loginPassword" type="password" placeholder="密碼" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
+        <button type="button" onclick="doLogin()" class="w-full present-btn-primary py-2 text-sm">登入</button>
+        <p class="text-center text-xs text-slate-400">還沒有帳號？
+          <button type="button" onclick="closeLoginModal(); openRegisterModal()" class="text-brand-green underline">立即註冊</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 註冊 Modal -->
+  <div id="registerModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl">
+      <div class="flex justify-between items-center mb-5">
+        <h4 class="text-lg font-semibold text-slate-800">註冊帳號</h4>
+        <button type="button" onclick="closeRegisterModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+      </div>
+      <div class="space-y-3">
+        <input id="registerPhone" type="tel" placeholder="電話號碼" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
+        <input id="registerPassword" type="password" placeholder="密碼" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
+        <select id="registerRole" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white" onchange="updateSpecificIdHint()">
+          <option value="student">學生</option>
+          <option value="teacher">老師</option>
+        </select>
+        <input id="registerSpecificId" type="text" placeholder="學號（如 s12345678）" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
+        <button type="button" onclick="doRegister()" class="w-full present-btn-primary py-2 text-sm">註冊</button>
+        <p class="text-center text-xs text-slate-400">已有帳號？
+          <button type="button" onclick="closeRegisterModal(); openLoginModal()" class="text-brand-green underline">立即登入</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 錢包 Modal -->
+  <div id="walletModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center p-5 pb-4 shrink-0">
+        <h4 class="text-xl font-semibold text-slate-800">我的錢包</h4>
+        <button type="button" onclick="closeWalletModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+      </div>
+
+      <!-- Balance card -->
+      <div class="mx-5 rounded-2xl bg-gradient-to-br from-emerald-600 to-green-700 text-white p-5 shrink-0">
+        <p class="text-sm opacity-80 mb-1">目前餘額</p>
+        <p class="text-4xl font-bold tracking-tight">$<span id="modalWalletBalance">--</span></p>
+        <p class="text-xs opacity-70 mt-2">用戶 ID：<span id="modalUserId">--</span> &nbsp;·&nbsp; 錢包 ID：<span id="modalWalletId">--</span></p>
+      </div>
+
+      <!-- Stripe top-up -->
+      <div class="mx-5 mt-4 border border-slate-200 rounded-xl p-4 shrink-0">
+        <h5 class="font-medium text-slate-700 mb-2">Stripe 充值</h5>
+        <div class="flex gap-2">
+          <input id="topupAmount" type="number" min="1" placeholder="充值金額（$）" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
+          <button type="button" onclick="doTopup()" class="present-btn-primary px-4 py-2 text-sm whitespace-nowrap">前往付款</button>
+        </div>
+        <p class="text-xs text-slate-400 mt-1.5">安全由 Stripe 處理 · 測試卡號：4242 4242 4242 4242</p>
+      </div>
+
+      <!-- Transaction history -->
+      <div class="flex-1 overflow-hidden flex flex-col px-5 pt-4 pb-5 min-h-0">
+        <div class="flex items-center justify-between mb-2 shrink-0">
+          <h5 class="font-medium text-slate-700">交易紀錄</h5>
+          <button type="button" onclick="loadTransactions()" class="text-xs text-slate-500 hover:text-slate-700 underline">重新整理</button>
+        </div>
+        <div id="txList" class="overflow-y-auto flex-1 space-y-0 divide-y divide-slate-100 text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/canteen-store.js"></script>
+  <script>
+    // 讀取 Teacher / Student 已發布菜單（Admin「儲存全部資料」後同步）
+    let frontendRole = "student";
+
+    let dishes = [];
+    let drinks = [];
+
+    function reloadPublishedMenu() {
+      const published = loadFrontendMenu(frontendRole);
+      dishes = published.dishes;
+      drinks = published.drinks;
+      renderDishes();
+      renderDrinks();
+    }
+
+    // 依 Admin 設定動態顯示訂購時段，並提示是否在可下單時間
+    function updateOrderWindowBadge() {
+      const badge = document.getElementById("periodBadge");
+      if (!badge) return;
+      const cfg = loadOrderWindow();
+      const open = !cfg.enforced || isOrderWindowOpen();
+      const validSlots = (cfg.slots || []).filter(s => s && s.start && s.end);
+      const slotsText = validSlots.length
+        ? validSlots.map(s => `${s.start}-${s.end}`).join("、")
+        : (cfg.start && cfg.end ? `${cfg.start}-${cfg.end}` : "");
+      if (!cfg.enforced) {
+        badge.textContent = `訂購時段 ${slotsText}`;
+      } else {
+        badge.textContent = open
+          ? `訂購時段 ${slotsText}（接受訂單中）`
+          : `訂購時段 ${slotsText}（目前休息中）`;
+      }
+      badge.classList.toggle("opacity-60", cfg.enforced && !open);
+    }
+
+    const cart = [];
+    const lastOrderStatusById = {};
+    const MY_ORDERS_PREVIEW_LIMIT = 3;
+
+    function formatOrderDate(iso) {
+      if (!iso) return "";
+      try {
+        return new Date(iso).toLocaleString("zh-HK", {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function countOrderItems(items) {
+      return (items || []).length;
+    }
+
+    function myOrderStatusLabel(status) {
+      const map = {
+        "READY":        '<span class="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">未取餐</span>',
+        "COMPLETED":    '<span class="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">未取餐</span>',
+        "PICKED_UP":    '<span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">已完成</span>',
+        "FULLY_PAID":   '<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">已全額付款</span>',
+        "DEPOSIT_PAID": '<span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">已付訂金</span>',
+        "PENDING":      '<span class="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">待結算</span>',
+      };
+      return map[status] || '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">處理中</span>';
+    }
+
+    function showOrderCompletedBanner(order) {
+      const banner = document.getElementById("orderStatusBanner");
+      const msg = order.statusMessage || "廚房已完成您的訂單，請取餐。謝謝﹗";
+      banner.textContent = `訂單 #${order.id}：${msg}`;
+      banner.classList.remove("hidden");
+    }
+
+    function renderOrderCardHtml(o, detailed) {
+      const dateStr = formatOrderDate(o.createdAt);
+      const itemCount = countOrderItems(o.items);
+      return `
+        <div class="border border-slate-200 rounded-lg p-2.5 text-xs bg-slate-50/50">
+          <div class="flex justify-between items-start gap-2 mb-1">
+            <div>
+              <span class="font-semibold text-slate-800">#${o.id}</span>
+              ${dateStr ? `<span class="text-slate-400 ml-1">${dateStr}</span>` : ""}
+            </div>
+            ${myOrderStatusLabel(o.status)}
+          </div>
+          <p class="text-slate-600">${formatOrderItemsSummary(o.items)}</p>
+          <p class="text-slate-500 mt-1">${itemCount} 項 · $${o.total}</p>
+          ${["READY","COMPLETED","FULLY_PAID","DEPOSIT_PAID"].includes(o.status) ? (() => {
+            const _s = getSession();
+            const ph = o.phone ? o.phone.slice(-4) : o.userId ? String(o.userId % 10000).padStart(4,"0") : (_s && _s.phone ? _s.phone.slice(-4) : "????");
+            const ord = String((o.backendOrderId || o.id) % 1000).padStart(3,"0");
+            return `<p class="mt-1 text-slate-500">取餐碼：<span class="font-mono font-semibold text-slate-700">${ph}-${ord}</span></p>`;
+          })() : ""}
+          ${
+            o.status === "PICKED_UP"
+              ? `<p class="mt-1.5 text-green-700 font-medium">已完成取餐，謝謝光臨！</p>`
+              : (o.status === "READY" || o.status === "COMPLETED")
+              ? `<p class="mt-1.5 text-orange-600 font-medium">${o.statusMessage || "廚房已完成您的訂單，請取餐。謝謝﹗"}</p>`
+              : o.status === "DEPOSIT_PAID"
+                ? '<p class="mt-1.5 text-purple-600">已付訂金，廚房處理中…</p>'
+                : o.status === "FULLY_PAID"
+                  ? '<p class="mt-1.5 text-blue-600">已全額付款，廚房處理中…</p>'
+                  : detailed ? '<p class="mt-1.5 text-orange-600">尚未結算</p>' : ""
+          }
+          ${detailed && o.status === "PENDING"
+            ? `<button type="button" onclick="settleOrder(${o.id})"
+                class="mt-2 w-full text-xs py-1.5 rounded-lg bg-brand-orange hover:bg-orange-600 text-white font-medium">
+                結算付款
+               </button>`
+            : ""}
+        </div>
+      `;
+    }
+
+    function getMyOrders() {
+      return getTodayOrdersForRole(frontendRole);
+    }
+
+    function syncOrderCompletionNotifications(orders) {
+      orders.forEach(o => {
+        const prev = lastOrderStatusById[o.id];
+        if (prev && !["READY","COMPLETED","PICKED_UP"].includes(prev) && o.status === "READY") {
+          showOrderCompletedBanner(o);
+        }
+        lastOrderStatusById[o.id] = o.status;
+      });
+    }
+
+    function renderMyOrders() {
+      const el = document.getElementById("myOrdersList");
+      const btn = document.getElementById("viewAllOrdersBtn");
+      const orders = getMyOrders();
+      syncOrderCompletionNotifications(orders);
+
+      if (!orders.length) {
+        el.innerHTML = '<p class="text-xs text-slate-400">今日尚無訂單</p>';
+        if (btn) btn.classList.add("hidden");
+        return;
+      }
+      if (btn) btn.classList.remove("hidden");
+
+      const preview = orders.slice(0, MY_ORDERS_PREVIEW_LIMIT);
+      el.innerHTML = preview.map(o => renderOrderCardHtml(o, false)).join("");
+    }
+
+    function openAllOrdersModal() {
+      const modal = document.getElementById("allOrdersModal");
+      const content = document.getElementById("allOrdersContent");
+      const orders = getMyOrders();
+      if (!orders.length) {
+        content.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">今日尚無訂單</p>';
+      } else {
+        content.innerHTML = orders.map(o => renderOrderCardHtml(o, true)).join("");
+      }
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeAllOrdersModal() {
+      const modal = document.getElementById("allOrdersModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    document.getElementById("viewAllOrdersBtn").addEventListener("click", openAllOrdersModal);
+    document.getElementById("closeAllOrdersModal").addEventListener("click", closeAllOrdersModal);
+    document.getElementById("allOrdersModal").addEventListener("click", e => {
+      if (e.target.id === "allOrdersModal") closeAllOrdersModal();
+    });
+
+    function statusBadge(status) {
+      return status === "SOLD_OUT"
+        ? '<span class="text-[10px] px-1 py-0.5 rounded bg-red-100 text-red-700">售完</span>'
+        : '<span class="text-[10px] px-1 py-0.5 rounded bg-green-100 text-green-700">上架</span>';
+    }
+
+    // 渲染 Dish 卡片
+    function renderDishes() {
+      const el = document.getElementById("dishList");
+      el.innerHTML = dishes.map(d => `
+        <div class="present-menu-card text-center ${d.status === "SOLD_OUT" ? "opacity-70" : ""}">
+          <img src="${resolveItemImage(d)}" alt="${d.name}" class="w-full aspect-square object-cover" />
+          <div class="p-2 space-y-1.5">
+            <h3 class="font-semibold text-sm leading-tight line-clamp-2 text-slate-800">${d.name}</h3>
+            <div class="flex justify-center">${statusBadge(d.status)}</div>
+            <p class="text-base text-slate-700 font-semibold">$${d.price} · 尚餘 ${d.balance}</p>
+            ${(d.options || []).length
+              ? `<div class="text-left">
+                   <div class="mt-1 space-y-1 max-h-20 overflow-y-auto">
+                     ${(d.options || []).map((o, idx) => `
+                       <label class="flex items-center gap-1 text-[10px] bg-slate-50 border rounded px-1 py-0.5">
+                         <input type="checkbox" class="shrink-0" data-dish-id="${d.id}" data-option="${o}" id="dish-${d.id}-opt-${idx}" />
+                         <span class="truncate">${o}</span>
+                       </label>
+                     `).join("")}
+                   </div>
+                 </div>`
+              : ""}
+            <button type="button" ${d.status === "SOLD_OUT" ? "disabled" : ""} onclick="addToCart('dish', ${d.id})"
+              class="add-btn w-full ${d.status === "SOLD_OUT" ? "!bg-slate-300 cursor-not-allowed" : ""}">
+              ${d.status === "SOLD_OUT" ? "售完" : "+ 加入"}
+            </button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // 渲染 Drink 卡片（Drink 沒有存貨限制）
+    function renderDrinks() {
+      const el = document.getElementById("drinkList");
+      el.innerHTML = drinks.map(d => `
+        <div class="present-menu-card text-center">
+          <img src="${resolveItemImage(d)}" alt="${d.name}" class="w-full aspect-square object-cover" />
+          <div class="p-2 space-y-1.5">
+            <h3 class="font-semibold text-sm leading-tight line-clamp-2 text-slate-800">${d.name}</h3>
+            <p class="text-base text-slate-700 font-semibold">$${d.price}</p>
+            <div class="text-left space-y-1 max-h-20 overflow-y-auto">
+              ${(d.options || []).map((o, idx) => `
+                <label class="flex items-center gap-1 text-[10px] bg-slate-50 border rounded px-1 py-0.5">
+                  <input type="checkbox" class="shrink-0" data-drink-id="${d.id}" data-option="${o}" id="drink-${d.id}-opt-${idx}" />
+                  <span class="truncate">${o}</span>
+                </label>
+              `).join("")}
+            </div>
+            <button type="button" onclick="addToCart('drink', ${d.id})"
+              class="add-btn w-full !bg-brand-orange hover:!bg-orange-600">
+              + 加入
+            </button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function countDishInCart(dishId) {
+      return cart.filter(c => c.type === "dish" && c.id === dishId).length;
+    }
+
+    // 加入購物車
+    function addToCart(type, id) {
+      if (!assertOrderWindowOpen()) return;
+      const source = type === "dish" ? dishes : drinks;
+      const item = source.find(x => x.id === id);
+      // Dish 仍受 SOLD_OUT / 庫存限制；Drink 不受限制
+      if (!item || (type === "dish" && item.status === "SOLD_OUT")) return;
+      if (type === "dish") {
+        const inCart = countDishInCart(id);
+        if (inCart >= Number(item.balance)) {
+          alert(`「${item.name}」庫存不足（剩餘 ${item.balance} 份）。`);
+          return;
+        }
+      }
+      // 讀取該 Dish 的 special request 細項（Drink 無此欄）
+      const selectedOptions = type === "dish"
+        ? Array.from(document.querySelectorAll(`input[type="checkbox"][data-dish-id="${id}"]:checked`)).map(el => el.dataset.option)
+        : Array.from(document.querySelectorAll(`input[type="checkbox"][data-drink-id="${id}"]:checked`)).map(el => el.dataset.option);
+
+      cart.push({
+        type,
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        specialRequestOptions: selectedOptions
+      });
+      renderCart();
+    }
+
+    /** 依加入順序：前 N 杯飲品可配 Dish 免費（N = Dish 數量），其餘視為單點飲品。 */
+    function getCartLinePricing() {
+      let freeDrinkSlots = cart.filter(c => c.type === "dish").length;
+      return cart.map(c => {
+        if (c.type !== "drink") {
+          return { payable: c.price, original: c.price, isDrinkFree: false, isSingleDrink: false };
+        }
+        const isFree = freeDrinkSlots > 0;
+        if (isFree) freeDrinkSlots -= 1;
+        return {
+          payable: isFree ? 0 : c.price,
+          original: c.price,
+          isDrinkFree: isFree,
+          isSingleDrink: !isFree
+        };
+      });
+    }
+
+    function formatLinePrice(line) {
+      if (line.isDrinkFree) {
+        return `<s class="text-slate-400">$${line.original}</s> <span class="text-green-700">$0</span>`;
+      }
+      if (line.isSingleDrink && line.original > 0) {
+        return `<span>$${line.payable}</span> <span class="text-xs text-orange-600">單點</span>`;
+      }
+      return `$${line.payable}`;
+    }
+
+    function calculateTotals() {
+      const dishItems = cart.filter(c => c.type === "dish");
+      const drinkItems = cart.filter(c => c.type === "drink");
+      const dishCount = dishItems.length;
+      const drinkCount = drinkItems.length;
+      const linePricing = getCartLinePricing();
+
+      const dishTotal = dishItems.reduce((s, c) => s + c.price, 0);
+      const drinkOriginalTotal = drinkItems.reduce((s, c) => s + c.price, 0);
+      const drinkPayableTotal = linePricing
+        .filter((_, i) => cart[i].type === "drink")
+        .reduce((s, line) => s + line.payable, 0);
+      const drinkDiscount = drinkOriginalTotal - drinkPayableTotal;
+      const freeDrinkCount = Math.min(dishCount, drinkCount);
+      const paidDrinkCount = Math.max(0, drinkCount - dishCount);
+
+      return {
+        dishCount,
+        drinkCount,
+        freeDrinkCount,
+        paidDrinkCount,
+        dishTotal,
+        drinkOriginalTotal,
+        drinkPayableTotal,
+        drinkDiscount,
+        total: dishTotal + drinkPayableTotal,
+        linePricing
+      };
+    }
+
+    // 渲染購物車
+    function renderCart() {
+      const el = document.getElementById("cartItems");
+      const totals = calculateTotals();
+      document.getElementById("subtotal").textContent = `$${totals.total}`;
+      document.getElementById("cartCount").textContent = `${cart.length} 件`;
+      el.innerHTML = cart.length
+        ? cart.map((c, i) => `
+          <div class="border rounded-lg p-2 text-sm">
+            <div class="flex justify-between">
+              <span>${c.name}</span>
+              <div class="flex items-center gap-2">
+                <span>${formatLinePrice(totals.linePricing[i])}</span>
+                <button class="text-red-600" onclick="removeItem(${i})">移除</button>
+              </div>
+            </div>
+            ${c.specialRequestOptions && c.specialRequestOptions.length
+              ? `<div class="mt-1 text-xs text-slate-500">Special Request: ${c.specialRequestOptions.join(", ")}</div>`
+              : ""}
+          </div>
+        `).join("")
+        : '<p class="text-sm text-slate-400">尚未加入任何項目</p>';
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      renderCart();
+    }
+
+    // 訂單預覽
+    const modal = document.getElementById("previewModal");
+    document.getElementById("previewBtn").addEventListener("click", () => {
+      const content = document.getElementById("previewContent");
+      const totals = calculateTotals();
+      content.innerHTML = cart.length
+        ? `
+          ${cart.map((c, i) => `
+            <div class="flex justify-between text-sm">
+              <span>${c.name}${totals.linePricing[i].isSingleDrink ? "（單點）" : ""}</span>
+              <span>${formatLinePrice(totals.linePricing[i])}</span>
+            </div>
+            ${c.specialRequestOptions && c.specialRequestOptions.length
+              ? `<div class="text-xs text-slate-500 -mt-1 mb-1">Special Request: ${c.specialRequestOptions.join(", ")}</div>`
+              : ""}
+          `).join("")}
+          <div class="border-t mt-2 pt-2 text-sm flex justify-between">
+            <span>Drink 原價小計</span>
+            <span>$${totals.drinkOriginalTotal}</span>
+          </div>
+          <div class="text-sm flex justify-between">
+            <span>Drink 搭配優惠（最多 ${totals.dishCount} 杯免費）</span>
+            <span class="text-green-700">-${totals.drinkDiscount}</span>
+          </div>
+          ${totals.paidDrinkCount > 0
+            ? `<div class="text-xs text-orange-600">有 ${totals.paidDrinkCount} 杯飲品超過 Dish 數量，按單點計價</div>`
+            : ""}
+        `
+        : '<p class="text-sm text-slate-400">購物車是空的</p>';
+      document.getElementById("previewTotal").textContent = `$${totals.total}`;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    });
+    document.getElementById("closeModal").addEventListener("click", () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    });
+
+    function closePreviewModal() {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function submitOrder() {
+      if (!assertOrderWindowOpen()) return;
+      if (!cart.length) {
+        alert("購物車是空的，請先加入菜品或飲品。");
+        return;
+      }
+      const storeState = loadCanteenState();
+      const stockCheck = validateOrderStock(storeState, cart);
+      if (!stockCheck.ok) {
+        alert(stockCheck.message);
+        reloadPublishedMenu();
+        return;
+      }
+      const totals = calculateTotals();
+      const orderId = Date.now();
+      const _sess = getSession();
+      const order = {
+        id: orderId,
+        role: frontendRole,
+        phone: _sess ? _sess.phone : null,
+        userId: _sess ? _sess.userId : null,
+        createdAt: new Date().toISOString(),
+        items: cart.map(c => ({ ...c })),
+        total: totals.total
+      };
+      try {
+        appendOrder(order);
+      } catch (_) {
+        /* 訂單紀錄寫入失敗不阻擋送出 */
+      }
+      deductStockForOrder(storeState, cart);
+      cart.length = 0;
+      reloadPublishedMenu();
+      renderCart();
+      closePreviewModal();
+      renderMyOrders();
+      alert(
+        `訂單已送出！\n訂單編號：${orderId}\n總計：$${totals.total}\n菜品庫存已更新。\n感謝您的訂購，謝謝﹗`
+      );
+    }
+
+    document.getElementById("submitOrderBtn").addEventListener("click", submitOrder);
+
+    // ── 結算付款 ────────────────────────────────────────
+    function getOrderLinePricing(items) {
+      let freeDrinkSlots = items.filter(i => i.type === "dish").length;
+      return items.map(i => {
+        if (i.type !== "drink") return i.price;
+        const isFree = freeDrinkSlots > 0;
+        if (isFree) freeDrinkSlots -= 1;
+        return isFree ? 0 : i.price;
+      });
+    }
+
+    async function settleOrder(localOrderId) {
+      const session = getSession();
+      if (!session) { alert("請先登入後再進行結算。"); openLoginModal(); return; }
+
+      const orders = loadOrders();
+      const order = orders.find(o => o.id === localOrderId);
+      if (!order || order.status !== "PENDING") { alert("此訂單已結算或不存在。"); return; }
+
+      const items = order.items || [];
+      const linePrices = getOrderLinePricing(items);
+
+      // 按 (menuId + specialNote + unitPrice) 分組
+      const grouped = new Map();
+      items.forEach((item, idx) => {
+        const unitPrice = linePrices[idx];
+        const note = (item.specialRequestOptions || []).join(", ").slice(0, 200);
+        const key = `${item.id}__${note}__${unitPrice}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note });
+        }
+        grouped.get(key).quantity += 1;
+      });
+      const apiItems = [...grouped.values()];
+
+      try {
+        // 1. 建立後端訂單
+        const orderRes = await fetch(`${ORDER_BASE}/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: session.userId, items: apiItems })
+        });
+        if (!orderRes.ok) {
+          const err = await orderRes.json().catch(() => ({}));
+          alert("建立訂單失敗：" + (err.message || orderRes.status));
+          return;
+        }
+        const backendOrder = await orderRes.json();
+        const { orderId: backendOrderId, totalAmt, depositAmt } = backendOrder;
+
+        // 2. 取得錢包（不存在會自動建立）
+        const walletRes = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+        if (!walletRes.ok) { alert("取得錢包失敗"); return; }
+        const wallet = await walletRes.json();
+        const { walletId, balance } = wallet;
+
+        // 3. 計算需扣款額
+        const deductAmt = depositAmt > 0 ? depositAmt : totalAmt;
+
+        if (deductAmt <= 0) {
+          await fetch(`${ORDER_BASE}/orders/${backendOrderId}/status?status=FULLY_PAID`, { method: "PUT" });
+          markOrderPaid(orders, localOrderId, backendOrderId, "FULLY_PAID");
+          alert("結算完成（免費訂單）！");
+          renderMyOrders(); openAllOrdersModal(); return;
+        }
+
+        if (Number(balance) < deductAmt) {
+          alert(`餘額不足，無法結算。\n目前餘額：$${balance}\n需支付：$${deductAmt}\n\n請先充值後再試。`);
+          return;
+        }
+
+        // 4. 扣款
+        const deductRes = await fetch(`${WALLET_BASE}/wallets/${walletId}/deduct`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            adminId: session.userId,
+            amount: deductAmt,
+            description: `訂單 #${backendOrderId} 付款`,
+            idempotencyKey: `order-${backendOrderId}-pay`
+          })
+        });
+        if (!deductRes.ok) {
+          const err = await deductRes.json().catch(() => ({}));
+          alert("扣款失敗：" + (err.message || deductRes.status));
+          return;
+        }
+        const updatedWallet = await deductRes.json();
+
+        // 5. 更新訂單狀態
+        const newStatus = depositAmt > 0 ? "DEPOSIT_PAID" : "FULLY_PAID";
+        await fetch(`${ORDER_BASE}/orders/${backendOrderId}/status?status=${newStatus}`, { method: "PUT" });
+
+        // 6. 更新 localStorage
+        markOrderPaid(orders, localOrderId, backendOrderId, newStatus);
+
+        const statusLabel = newStatus === "DEPOSIT_PAID" ? "已付訂金 ($50)" : "已全額付款";
+        _walletData = { ..._walletData, balance: updatedWallet.balance };
+        _setBalanceDisplay(updatedWallet.balance);
+        alert(`結算成功！\n扣款：$${deductAmt}　剩餘餘額：$${updatedWallet.balance}\n訂單狀態：${statusLabel}`);
+        renderMyOrders();
+        openAllOrdersModal();
+
+      } catch (_) {
+        alert("結算時發生錯誤，請確認 order-service (8084) 及 wallet-service (8082) 已啟動。");
+      }
+    }
+
+    function markOrderPaid(orders, localOrderId, backendOrderId, status) {
+      const idx = orders.findIndex(o => o.id === localOrderId);
+      if (idx !== -1) {
+        orders[idx].status = status;
+        orders[idx].backendOrderId = backendOrderId;
+        orders[idx].paidAt = new Date().toISOString();
+      }
+      saveOrders(orders);
+    }
+
+    function refreshCustomerPage() {
+      reloadPublishedMenu();
+      renderMyOrders();
+      updateOrderWindowBadge();
+      const modal = document.getElementById("allOrdersModal");
+      if (modal && !modal.classList.contains("hidden")) {
+        openAllOrdersModal();
+      }
+    }
+
+    // ── 錢包 ────────────────────────────────────────
+    let _walletData = null;
+
+    function _setBalanceDisplay(balance) {
+      const b = (balance != null) ? balance : "--";
+      ["walletBalance", "modalWalletBalance"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = b;
+      });
+    }
+
+    async function fetchWallet() {
+      const session = getSession();
+      if (!session) return;
+      try {
+        const res = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+        if (!res.ok) return;
+        _walletData = await res.json();
+        _setBalanceDisplay(_walletData.balance);
+        document.getElementById("walletBtn").classList.remove("hidden");
+      } catch (_) {}
+    }
+
+    function openWalletModal() {
+      const session = getSession();
+      if (!session) { openLoginModal(); return; }
+      document.getElementById("walletModal").classList.remove("hidden");
+      document.getElementById("walletModal").classList.add("flex");
+      document.getElementById("modalUserId").textContent = session.userId;
+      if (_walletData) {
+        document.getElementById("modalWalletId").textContent = _walletData.walletId;
+        _setBalanceDisplay(_walletData.balance);
+      }
+      _refreshWalletModal();
+    }
+
+    async function _refreshWalletModal() {
+      const session = getSession();
+      if (!session) return;
+      try {
+        const res = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+        if (!res.ok) return;
+        _walletData = await res.json();
+        _setBalanceDisplay(_walletData.balance);
+        document.getElementById("modalWalletId").textContent = _walletData.walletId;
+        await loadTransactions();
+      } catch (_) {}
+    }
+
+    function closeWalletModal() {
+      document.getElementById("walletModal").classList.add("hidden");
+      document.getElementById("walletModal").classList.remove("flex");
+    }
+
+    function _txLabel(type) {
+      return { RECHARGE: "管理員充值", DEDUCT: "訂單扣款", REFUND: "退款", STRIPE_TOPUP: "Stripe 充值" }[type] || type;
+    }
+    function _txColor(type) { return type === "DEDUCT" ? "text-red-600" : "text-emerald-600"; }
+    function _txSign(type)  { return type === "DEDUCT" ? "-" : "+"; }
+
+    async function loadTransactions() {
+      const el = document.getElementById("txList");
+      if (!el || !_walletData) return;
+      el.innerHTML = '<p class="text-slate-400 py-3 text-center">載入中…</p>';
+      try {
+        const res = await fetch(`${WALLET_BASE}/wallets/${_walletData.walletId}/transactions`);
+        if (!res.ok) { el.innerHTML = '<p class="text-red-500 py-2">載入失敗</p>'; return; }
+        const txs = await res.json();
+        if (!txs.length) { el.innerHTML = '<p class="text-slate-400 py-3 text-center text-sm">暫無交易紀錄</p>'; return; }
+        txs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        el.innerHTML = txs.map(tx => `
+          <div class="flex justify-between items-center py-2.5">
+            <div class="min-w-0">
+              <p class="font-medium text-slate-700 text-sm">${_txLabel(tx.type)}</p>
+              <p class="text-xs text-slate-400 truncate">${tx.description || ""}${tx.createdAt ? " · " + tx.createdAt.replace("T", " ").slice(0, 16) : ""}</p>
+            </div>
+            <span class="font-semibold ml-3 shrink-0 ${_txColor(tx.type)}">${_txSign(tx.type)}$${tx.amount}</span>
+          </div>
+        `).join("");
+      } catch (_) {
+        el.innerHTML = '<p class="text-red-500 py-2 text-sm">無法連線至 wallet-service (port 8082)</p>';
+      }
+    }
+
+    async function doTopup() {
+      const session = getSession();
+      if (!session) { alert("請先登入"); return; }
+      if (!_walletData) { alert("錢包資料載入中，請稍後再試"); return; }
+      const amount = Number(document.getElementById("topupAmount").value);
+      if (!amount || amount <= 0) { alert("請輸入充值金額"); return; }
+      try {
+        const res = await fetch(`${WALLET_BASE}/wallets/${_walletData.walletId}/topup/create-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount })
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); alert("充值失敗：" + (e.message || res.status)); return; }
+        const data = await res.json();
+        localStorage.setItem("topupWalletId", String(_walletData.walletId));
+        window.location.href = data.sessionUrl;
+      } catch (_) {
+        alert("無法連線至 wallet-service (port 8082)，請確認服務已啟動。");
+      }
+    }
+
+    // Handle Stripe redirect return (?topup=success&session_id=cs_...)
+    (function handleStripeReturn() {
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get("topup");
+      if (!status) return;
+      history.replaceState({}, "", window.location.pathname);
+      if (status === "cancel") { alert("充值已取消。"); return; }
+      if (status === "success") {
+        const sessionId = params.get("session_id");
+        const walletId  = localStorage.getItem("topupWalletId");
+        if (!sessionId || !walletId) return;
+        fetch(`${WALLET_BASE}/wallets/${walletId}/topup/verify?sessionId=${encodeURIComponent(sessionId)}`)
+          .then(r => r.json())
+          .then(data => {
+            fetchWallet();
+            if (data.status === "SUCCEEDED") {
+              alert(`充值成功！新餘額：$${data.walletBalance}`);
+              openWalletModal();
+            }
+          })
+          .catch(() => alert("充值驗證失敗，請聯絡管理員。"));
+      }
+    })();
+
+    // ── 登入 / 註冊 ────────────────────────────────────
+    function updateAuthUI() {
+      const session = getSession();
+      const guestArea = document.getElementById("guestArea");
+      const loggedInArea = document.getElementById("loggedInArea");
+      if (session) {
+        guestArea.classList.add("hidden");
+        loggedInArea.classList.remove("hidden");
+        loggedInArea.classList.add("flex");
+        document.getElementById("userDisplayName").textContent = session.phone || session.role;
+        frontendRole = (session.role === "teacher") ? "teacher" : "student";
+        document.getElementById("userRoleBadge").textContent = frontendRole === "teacher" ? "老師" : "學生";
+        fetchWallet();
+      } else {
+        guestArea.classList.remove("hidden");
+        loggedInArea.classList.add("hidden");
+        loggedInArea.classList.remove("flex");
+        document.getElementById("userDisplayName").textContent = "訪客";
+        _walletData = null;
+        _setBalanceDisplay(null);
+        document.getElementById("walletBtn").classList.add("hidden");
+      }
+    }
+
+    function openLoginModal() {
+      document.getElementById("loginModal").classList.remove("hidden");
+      document.getElementById("loginModal").classList.add("flex");
+    }
+    function closeLoginModal() {
+      document.getElementById("loginModal").classList.add("hidden");
+      document.getElementById("loginModal").classList.remove("flex");
+    }
+    function openRegisterModal() {
+      document.getElementById("registerModal").classList.remove("hidden");
+      document.getElementById("registerModal").classList.add("flex");
+    }
+    function closeRegisterModal() {
+      document.getElementById("registerModal").classList.add("hidden");
+      document.getElementById("registerModal").classList.remove("flex");
+    }
+    function updateSpecificIdHint() {
+      const role = document.getElementById("registerRole").value;
+      document.getElementById("registerSpecificId").placeholder =
+        role === "teacher" ? "教師編號（如 t12345678）" : "學號（如 s12345678）";
+    }
+
+    async function doLogin() {
+      const phone = document.getElementById("loginPhone").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      if (!phone || !password) { alert("請填寫電話與密碼"); return; }
+      try {
+        for (const role of ["student", "teacher"]) {
+          const res = await fetch(`${LOGIN_BASE}/api/users/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, password, role })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            saveSession({ userId: data.userId, role: data.role.toLowerCase(), phone: data.phone });
+            closeLoginModal();
+            updateAuthUI();
+            reloadPublishedMenu();
+            renderMyOrders();
+            return;
+          }
+        }
+        alert("登入失敗，請確認電話號碼與密碼。");
+      } catch (_) {
+        alert("無法連線至登入服務，請確認 login-service (port 8081) 已啟動。");
+      }
+    }
+
+    async function doRegister() {
+      const phone = document.getElementById("registerPhone").value.trim();
+      const password = document.getElementById("registerPassword").value;
+      const role = document.getElementById("registerRole").value;
+      const specificId = document.getElementById("registerSpecificId").value.trim();
+      if (!phone || !password || !specificId) { alert("請填寫所有欄位"); return; }
+      try {
+        const res = await fetch(`${LOGIN_BASE}/api/users/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, password, role, specificId })
+        });
+        if (res.ok) {
+          alert("註冊成功！請登入。");
+          closeRegisterModal();
+          openLoginModal();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(data.message || "註冊失敗，電話號碼可能已被使用。");
+        }
+      } catch (_) {
+        alert("無法連線至登入服務，請確認 login-service (port 8081) 已啟動。");
+      }
+    }
+
+    function logout() {
+      clearSession();
+      frontendRole = "student";
+      updateAuthUI();
+      reloadPublishedMenu();
+      renderMyOrders();
+    }
+
+    // Poll pickup-service every 20s — upgrade READY/COMPLETED → PICKED_UP once all items verified
+    async function syncPickupStatus() {
+      const orders = loadOrders();
+      const pending = orders.filter(o =>
+        (o.status === "READY" || o.status === "COMPLETED") && o.backendOrderId
+      );
+      if (!pending.length) return;
+      let changed = false;
+      for (const o of pending) {
+        try {
+          const itemsRes = await fetch(`${ORDER_BASE}/orders/${o.backendOrderId}/items`);
+          if (!itemsRes.ok) continue;
+          const items = await itemsRes.json();
+          if (!items.length) continue;
+          const pickupChecks = await Promise.all(
+            items.map(item =>
+              fetch(`${PICKUP_BASE}/api/pickups/item/${item.itemId}`)
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null)
+            )
+          );
+          const allVerified = pickupChecks.every(p => p && p.actualTime != null);
+          if (allVerified) {
+            o.status = "PICKED_UP";
+            changed = true;
+          }
+        } catch (_) {}
+      }
+      if (changed) { saveOrders(orders); renderMyOrders(); }
+    }
+
+    reloadPublishedMenu();
+    renderCart();
+    renderMyOrders();
+    updateAuthUI();
+    updateOrderWindowBadge();
+    syncPickupStatus();
+    setInterval(syncPickupStatus, 20000);
+    setInterval(updateOrderWindowBadge, 60000);
+
+    window.addEventListener("canteen-store-updated", refreshCustomerPage);
+    window.addEventListener("storage", (e) => {
+      if (
+        e.key === CANTEEN_STORE_KEY ||
+        e.key === CANTEEN_IMAGE_STORE_KEY ||
+        e.key === CANTEEN_ORDERS_KEY ||
+        e.key === CANTEEN_ORDER_WINDOW_KEY
+      ) {
+        refreshCustomerPage();
+      }
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        refreshCustomerPage();
+        syncPickupStatus();
+      }
+    });
+  </script>
+</body>
+</html>

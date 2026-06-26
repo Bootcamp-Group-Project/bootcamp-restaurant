@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurant POS – System 4</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
+
+    h1 { padding: 16px 24px; background: #1F4E78; color: white; font-size: 18px; }
+
+    nav { background: #2E74B5; display: flex; gap: 4px; padding: 8px 24px; }
+    nav button { padding: 8px 22px; border: none; border-radius: 4px; cursor: pointer;
+                 background: transparent; color: white; font-size: 14px; }
+    nav button.active { background: white; color: #1F4E78; font-weight: bold; }
+
+    .tab { display: none; padding: 20px 24px; }
+    .tab.active { display: block; }
+
+    .card { background: white; border-radius: 8px; padding: 20px;
+            margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    h2 { font-size: 15px; margin-bottom: 12px; color: #1F4E78;
+         border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
+
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    input, select { padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px;
+                    font-size: 14px; min-width: 120px; }
+    button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;
+             font-size: 14px; background: #2E74B5; color: white; }
+    button:hover  { background: #1F4E78; }
+    button.green  { background: #5cb85c; }
+    button.green:hover { background: #3d8b3d; }
+    button.red    { background: #D9534F; }
+    button.red:hover   { background: #b52b27; }
+    button.grey   { background: #6c757d; }
+    button.grey:hover  { background: #495057; }
+    button.purple { background: #7C3AED; }
+    button.purple:hover { background: #5B21B6; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+    th { background: #1F4E78; color: white; text-align: left; padding: 8px 10px; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+    tr:hover td { background: #f5f8fb; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px;
+             font-size: 11px; font-weight: bold; }
+    .b-pending  { background: #FEF3C7; color: #92400E; }
+    .b-deposit  { background: #DBEAFE; color: #1E40AF; }
+    .b-paid     { background: #D1FAE5; color: #065F46; }
+    .b-complete { background: #E0E7FF; color: #3730A3; }
+    .b-recharge { background: #D1FAE5; color: #065F46; }
+    .b-deduct   { background: #FCE4E4; color: #B91C1C; }
+    .b-refund   { background: #FEF3C7; color: #92400E; }
+    .b-stripe   { background: #EDE9FE; color: #5B21B6; }
+
+    .info-box { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px;
+                padding: 12px 16px; margin-top: 8px; font-size: 14px; }
+    .info-box span { font-weight: bold; color: #1E40AF; }
+
+    .item-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+                margin-bottom: 6px; padding: 8px; background: #f5f8fb; border-radius: 4px; }
+
+    .msg { padding: 8px 12px; border-radius: 4px; font-size: 13px; margin-top: 10px; }
+    .msg.ok  { background: #D1FAE5; color: #065F46; }
+    .msg.err { background: #FCE4E4; color: #B91C1C; }
+
+    .section-divider { border-top: 1px solid #e0e0e0; margin-top: 16px; padding-top: 16px; }
+
+    .empty { color: #888; font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>Restaurant POS — System 4: Wallet &amp; Order</h1>
+
+<nav>
+  <button class="active" onclick="showTab('wallet', this)">Wallet</button>
+  <button onclick="showTab('order', this)">Order</button>
+</nav>
+
+<!-- ===================== WALLET ===================== -->
+<div id="wallet" class="tab active">
+
+  <div class="card">
+    <h2>Get Wallet</h2>
+    <div class="row">
+      <input id="walletUserId" type="number" placeholder="User ID" min="1">
+      <button onclick="getWallet()">Get Wallet</button>
+    </div>
+    <div id="walletInfo"></div>
+  </div>
+
+  <div class="card">
+    <h2>Adjust Balance (Admin)</h2>
+    <div class="row">
+      <input id="adjWalletId" type="number" placeholder="Wallet ID" min="1">
+      <input id="adjAdminId" type="number" placeholder="Admin ID" min="1">
+      <input id="adjAmount"  type="number" placeholder="Amount" min="0" step="0.01">
+      <input id="adjDesc"    type="text"   placeholder="Description" style="min-width:200px">
+    </div>
+    <div class="row">
+      <button class="green" onclick="adjust('recharge')">Recharge</button>
+      <button class="red"   onclick="adjust('deduct')">Deduct</button>
+      <button class="grey"  onclick="adjust('refund')">Refund</button>
+    </div>
+    <div id="adjResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Self-Service Top-up (Stripe)</h2>
+    <div class="row">
+      <input id="topupWalletId" type="number" placeholder="Wallet ID" min="1">
+      <input id="topupAmount"   type="number" placeholder="Amount (TWD)" min="1" step="1" style="width:160px">
+      <button class="purple" onclick="startTopup()">Pay with Stripe →</button>
+    </div>
+    <div id="topupResult"></div>
+
+    <div class="section-divider">
+      <h2 style="border:none; padding:0; margin-bottom:10px">Verify Top-up</h2>
+      <p style="font-size:12px; color:#666; margin-bottom:8px">
+        After returning from Stripe, verify your payment to credit the wallet.
+      </p>
+      <div class="row">
+        <input id="verifyWalletId"  type="number" placeholder="Wallet ID" min="1">
+        <input id="verifySessionId" type="text"   placeholder="Stripe Session ID (cs_...)" style="min-width:300px">
+        <button onclick="verifyTopup()">Verify Payment</button>
+      </div>
+      <div id="verifyResult"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Transaction History</h2>
+    <div class="row">
+      <input id="txWalletId" type="number" placeholder="Wallet ID" min="1">
+      <button onclick="getTransactions()">Get Transactions</button>
+    </div>
+    <div id="txList"></div>
+  </div>
+
+</div>
+
+<!-- ===================== ORDER ===================== -->
+<div id="order" class="tab">
+
+  <div class="card">
+    <h2>Orders by User</h2>
+    <div class="row">
+      <input id="orderUserId" type="number" placeholder="User ID" min="1">
+      <button onclick="getOrders()">Get Orders</button>
+    </div>
+    <div id="orderList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Create Order</h2>
+    <p style="font-size:12px; color:#666; margin-bottom:10px">
+      Prices are fetched live from the menu — no need to enter unit price.
+    </p>
+    <div class="row">
+      <input id="createUserId" type="number" placeholder="User ID" min="1">
+    </div>
+    <div id="itemsContainer"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="grey"  onclick="addItem()">+ Add Item</button>
+      <button class="green" onclick="createOrder()">Create Order</button>
+    </div>
+    <div id="createResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Update Order Status (Admin)</h2>
+    <div class="row">
+      <input id="statusOrderId" type="number" placeholder="Order ID" min="1">
+      <select id="statusSelect">
+        <option value="PENDING_PAY">PENDING_PAY</option>
+        <option value="DEPOSIT_PAID">DEPOSIT_PAID</option>
+        <option value="FULLY_PAID">FULLY_PAID</option>
+        <option value="COMPLETE">COMPLETE</option>
+      </select>
+      <button onclick="updateStatus()">Update</button>
+    </div>
+    <div id="statusResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Order Items</h2>
+    <div class="row">
+      <input id="itemsOrderId" type="number" placeholder="Order ID" min="1">
+      <button onclick="getOrderItems()">Get Items</button>
+    </div>
+    <div id="itemsList"></div>
+  </div>
+
+</div>
+
+<script>
+  const WALLET_BASE = 'http://localhost:8082';
+  const ORDER_BASE  = 'http://localhost:8084';
+
+  // ── Tab navigation ──────────────────────────────────────
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── Shared helpers ──────────────────────────────────────
+  async function apiFetch(base, url, options = {}) {
+    const res = await fetch(base + url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options
+    });
+    const data = await res.json();
+    if (!res.ok) throw { status: res.status, message: data.message || 'Unknown error' };
+    return data;
+  }
+
+  function showMsg(elId, text, isError = false) {
+    document.getElementById(elId).innerHTML =
+      `<div class="msg ${isError ? 'err' : 'ok'}">${text}</div>`;
+  }
+
+  function fmt(n)  { return '$' + Number(n).toFixed(2); }
+  function dt(s)   { return s ? s.replace('T', ' ').substring(0, 19) : '—'; }
+
+  function statusBadge(s) {
+    const m = { PENDING_PAY:'b-pending', DEPOSIT_PAID:'b-deposit', FULLY_PAID:'b-paid', COMPLETE:'b-complete' };
+    return `<span class="badge ${m[s]||''}">${s}</span>`;
+  }
+  function typeBadge(t) {
+    const m = { RECHARGE:'b-recharge', DEDUCT:'b-deduct', REFUND:'b-refund', STRIPE_TOPUP:'b-stripe' };
+    return `<span class="badge ${m[t]||''}">${t}</span>`;
+  }
+  function pickupBadge(p) {
+    return `<span class="badge ${p === 'PICKED_UP' ? 'b-complete' : 'b-pending'}">${p}</span>`;
+  }
+
+  function table(headers, rows) {
+    if (!rows.length) return '<p class="empty">No records found.</p>';
+    return `<table>
+      <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+  }
+
+  // ── Wallet ──────────────────────────────────────────────
+  async function getWallet() {
+    const uid = document.getElementById('walletUserId').value;
+    if (!uid) return showMsg('walletInfo', 'Enter a User ID.', true);
+    try {
+      const w = await apiFetch(WALLET_BASE, `/wallets/user/${uid}`);
+      document.getElementById('adjWalletId').value    = w.walletId;
+      document.getElementById('txWalletId').value     = w.walletId;
+      document.getElementById('topupWalletId').value  = w.walletId;
+      document.getElementById('verifyWalletId').value = w.walletId;
+      document.getElementById('walletInfo').innerHTML = `
+        <div class="info-box">
+          Wallet ID: <span>${w.walletId}</span> &nbsp;|&nbsp;
+          User ID: <span>${w.userId}</span> &nbsp;|&nbsp;
+          Balance: <span>${fmt(w.balance)}</span>
+        </div>`;
+    } catch (e) { showMsg('walletInfo', `[${e.status}] ${e.message}`, true); }
+  }
+
+  async function adjust(action) {
+    const walletId = document.getElementById('adjWalletId').value;
+    const adminId  = document.getElementById('adjAdminId').value;
+    const amount   = document.getElementById('adjAmount').value;
+    const desc     = document.getElementById('adjDesc').value;
+    if (!walletId || !adminId || !amount)
+      return showMsg('adjResult', 'Wallet ID, Admin ID and Amount are required.', true);
+    try {
+      const tx = await apiFetch(WALLET_BASE, `/wallets/${walletId}/${action}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          adminId: Number(adminId),
+          amount: Number(amount),
+          description: desc,
+          idempotencyKey: `${action}-${Date.now()}`
+        })
+      });
+      showMsg('adjResult',
+        `✓ ${action.toUpperCase()} — Transaction ID: ${tx.transactionId} | Amount: ${fmt(tx.amount)}`);
+    } catch (e) { showMsg('adjResult', `[${e.status}] ${e.message}`, true); }
+  }
+
+  async function getTransactions() {
+    const walletId = document.getElementById('txWalletId').value;
+    if (!walletId) return showMsg('txList', 'Enter a Wallet ID.', true);
+    try {
+      const txs = await apiFetch(WALLET_BASE, `/wallets/${walletId}/transactions`);
+      document.getElementById('txList').innerHTML = table(
+        ['ID', 'Type', 'Amount', 'Admin ID', 'Description', 'Created At'],
+        txs.map(t => `<tr>
+          <td>${t.transactionId}</td>
+          <td>${typeBadge(t.type)}</td>
+          <td>${fmt(t.amount)}</td>
+          <td>${t.adminId || '—'}</td>
+          <td>${t.description || '—'}</td>
+          <td>${dt(t.createdAt)}</td>
+        </tr>`)
+      );
+    } catch (e) { showMsg('txList', `[${e.status}] ${e.message}`, true); }
+  }
+
+  // ── Stripe Top-up ────────────────────────────────────────
+  async function startTopup() {
+    const walletId = document.getElementById('topupWalletId').value;
+    const amount   = document.getElementById('topupAmount').value;
+    if (!walletId || !amount)
+      return showMsg('topupResult', 'Wallet ID and Amount are required.', true);
+    try {
+      showMsg('topupResult', 'Creating Stripe session…');
+      const resp = await apiFetch(WALLET_BASE, `/wallets/${walletId}/topup/create-session`, {
+        method: 'POST',
+        body: JSON.stringify({ amount: Number(amount) })
+      });
+      localStorage.setItem('topupWalletId', walletId);
+      window.location.href = resp.sessionUrl;
+    } catch (e) { showMsg('topupResult', `[${e.status}] ${e.message}`, true); }
+  }
+
+  async function verifyTopup() {
+    const walletId   = document.getElementById('verifyWalletId').value;
+    const sessionId  = document.getElementById('verifySessionId').value.trim();
+    if (!walletId || !sessionId)
+      return showMsg('verifyResult', 'Wallet ID and Session ID are required.', true);
+    try {
+      const resp = await apiFetch(WALLET_BASE,
+        `/wallets/${walletId}/topup/verify?sessionId=${encodeURIComponent(sessionId)}`);
+      const cls = resp.status === 'SUCCEEDED' ? 'ok' : 'err';
+      document.getElementById('verifyResult').innerHTML =
+        `<div class="msg ${cls}">${resp.message} | New balance: ${fmt(resp.walletBalance)}</div>`;
+    } catch (e) { showMsg('verifyResult', `[${e.status}] ${e.message}`, true); }
+  }
+
+  // Auto-fill verify form when Stripe redirects back
+  (function handleStripeReturn() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('topup') === 'success') {
+      const sessionId = params.get('session_id');
+      const walletId  = localStorage.getItem('topupWalletId');
+      if (sessionId) document.getElementById('verifySessionId').value = sessionId;
+      if (walletId)  document.getElementById('verifyWalletId').value  = walletId;
+      showMsg('verifyResult',
+        'Payment completed — click "Verify Payment" to credit your wallet.', false);
+    } else if (params.get('topup') === 'cancel') {
+      showMsg('topupResult', 'Payment was cancelled.', true);
+    }
+  })();
+
+  // ── Order ────────────────────────────────────────────────
+  let itemSeq = 0;
+
+  function addItem() {
+    itemSeq++;
+    const div = document.createElement('div');
+    div.className = 'item-row';
+    div.id = `item-${itemSeq}`;
+    div.innerHTML = `
+      <span style="font-size:13px;color:#555;width:50px">Item ${itemSeq}</span>
+      <input type="number" id="mid-${itemSeq}" placeholder="Menu ID"  min="1"  style="width:90px">
+      <input type="number" id="qty-${itemSeq}" placeholder="Qty"      min="1"  style="width:65px">
+      <input type="text"   id="note-${itemSeq}" placeholder="Special Note (max 200)" style="width:280px">
+      <button class="red" style="padding:4px 10px" onclick="removeItem(${itemSeq})">✕</button>`;
+    document.getElementById('itemsContainer').appendChild(div);
+  }
+
+  function removeItem(n) {
+    const el = document.getElementById(`item-${n}`);
+    if (el) el.remove();
+  }
+
+  async function getOrders() {
+    const uid = document.getElementById('orderUserId').value;
+    if (!uid) return showMsg('orderList', 'Enter a User ID.', true);
+    try {
+      const orders = await apiFetch(ORDER_BASE, `/orders/user/${uid}`);
+      document.getElementById('orderList').innerHTML = table(
+        ['Order ID', 'Total Amt', 'Qty', 'Deposit', 'Status', 'Created At'],
+        orders.map(o => `<tr>
+          <td>${o.orderId}</td>
+          <td>${fmt(o.totalAmt)}</td>
+          <td>${o.totalQty}</td>
+          <td>${fmt(o.depositAmt)}</td>
+          <td>${statusBadge(o.orderStatus)}</td>
+          <td>${dt(o.createdAt)}</td>
+        </tr>`)
+      );
+    } catch (e) { showMsg('orderList', `[${e.status}] ${e.message}`, true); }
+  }
+
+  async function createOrder() {
+    const uid = document.getElementById('createUserId').value;
+    if (!uid) return showMsg('createResult', 'Enter a User ID.', true);
+
+    const rows = document.getElementById('itemsContainer').querySelectorAll('.item-row');
+    if (!rows.length) return showMsg('createResult', 'Add at least one item.', true);
+
+    const items = [];
+    for (const row of rows) {
+      const n      = row.id.split('-')[1];
+      const menuId = document.getElementById(`mid-${n}`).value;
+      const qty    = document.getElementById(`qty-${n}`).value;
+      const note   = document.getElementById(`note-${n}`).value;
+      if (!menuId || !qty)
+        return showMsg('createResult', `Item ${n}: Menu ID and Qty are required.`, true);
+      items.push({ menuId: Number(menuId), quantity: Number(qty), specialNote: note || null });
+    }
+
+    try {
+      const o = await apiFetch(ORDER_BASE, '/orders', {
+        method: 'POST',
+        body: JSON.stringify({ userId: Number(uid), items })
+      });
+      showMsg('createResult',
+        `✓ Order created — ID: ${o.orderId} | Total: ${fmt(o.totalAmt)} | Deposit: ${fmt(o.depositAmt)} | Status: ${o.orderStatus}`);
+      document.getElementById('itemsContainer').innerHTML = '';
+      itemSeq = 0;
+      addItem();
+    } catch (e) { showMsg('createResult', `[${e.status}] ${e.message}`, true); }
+  }
+
+  async function updateStatus() {
+    const orderId = document.getElementById('statusOrderId').value;
+    const status  = document.getElementById('statusSelect').value;
+    if (!orderId) return showMsg('statusResult', 'Enter an Order ID.', true);
+    try {
+      const o = await apiFetch(ORDER_BASE, `/orders/${orderId}/status?status=${status}`, { method: 'PUT' });
+      showMsg('statusResult', `✓ Order ${o.orderId} → ${statusBadge(o.orderStatus)}`);
+    } catch (e) { showMsg('statusResult', `[${e.status}] ${e.message}`, true); }
+  }
+
+  async function getOrderItems() {
+    const orderId = document.getElementById('itemsOrderId').value;
+    if (!orderId) return showMsg('itemsList', 'Enter an Order ID.', true);
+    try {
+      const items = await apiFetch(ORDER_BASE, `/orders/${orderId}/items`);
+      document.getElementById('itemsList').innerHTML = table(
+        ['Item ID', 'Menu ID', 'Qty', 'Unit Price', 'Pickup', 'Special Note'],
+        items.map(i => `<tr>
+          <td>${i.itemId}</td>
+          <td>${i.menuId}</td>
+          <td>${i.quantity}</td>
+          <td>${fmt(i.unitPrice)}</td>
+          <td>${pickupBadge(i.pickupStatus)}</td>
+          <td>${i.specialNote || '—'}</td>
+        </tr>`)
+      );
+    } catch (e) { showMsg('itemsList', `[${e.status}] ${e.message}`, true); }
+  }
+
+  // Start with one item row ready
+  addItem();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+name = "canteen-messenger"
+main = "index.js"
+compatibility_date = "2026-06-11"
+
+# Secrets — set via CLI:
+#   wrangler secret put PAGE_ACCESS_TOKEN
+#   wrangler secret put VERIFY_TOKEN
+#   wrangler secret put JAVA_API_BASE

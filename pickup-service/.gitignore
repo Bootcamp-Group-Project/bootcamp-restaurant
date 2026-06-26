@@ -1,0 +1,14 @@
+target/
+*.class
+*.jar
+*.war
+
+# ⚠️ 唔好 commit 呢個！裡面有資料庫密碼
+src/main/resources/application.properties
+
+# 保留範本（隊友可以照住改）
+!src/main/resources/application.properties.example
+
+.idea/
+*.iml
+.DS_Store

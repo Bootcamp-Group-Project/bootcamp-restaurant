@@ -1,0 +1,45 @@
+server:
+  port: ${PORT:8084}
+
+spring:
+  application:
+    name: order-service
+
+  main:
+    lazy-initialization: true
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/restaurant_pos}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 20000
+      idle-timeout: 300000
+
+  jpa:
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+
+wallet:
+  service:
+    url: ${WALLET_SERVICE_URL:http://localhost:8082}
+
+menu:
+  service:
+    url: ${MENU_SERVICE_URL:http://localhost:8080}
+    username: ${MENU_SERVICE_USERNAME:kitchen_user}
+    password: ${MENU_SERVICE_PASSWORD:kitchen123}
+
+pickup:
+  service:
+    url: ${PICKUP_SERVICE_URL:http://localhost:8085}
+
+logging:
+  level:
+    root: WARN
+    com.bootcamp.restaurant: INFO

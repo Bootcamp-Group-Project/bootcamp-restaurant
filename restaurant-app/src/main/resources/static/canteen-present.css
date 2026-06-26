@@ -1,0 +1,196 @@
+/* Canteen presentation theme — aligned with meeting mockups */
+:root {
+  --brand-green: #16a34a;
+  --brand-green-dark: #14532d;
+  --brand-green-darker: #052e16;
+  --brand-orange: #f97316;
+  --sidebar-w: 15rem;
+}
+
+body.present-ui {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+}
+
+/* —— Admin —— */
+.present-admin {
+  background: #f1f5f9;
+  min-height: 100vh;
+}
+.present-admin .admin-sidebar {
+  background: linear-gradient(180deg, #166534 0%, #14532d 100%);
+  color: #ecfdf5;
+  min-height: 100vh;
+}
+.present-admin .admin-sidebar a {
+  color: #d1fae5;
+  transition: background 0.15s;
+}
+.present-admin .admin-sidebar a:hover,
+.present-admin .admin-sidebar a.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.present-admin .admin-topbar {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+.present-table thead tr {
+  background: var(--brand-green);
+  color: #fff;
+}
+.present-table thead th {
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+.present-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.present-btn-primary {
+  background: var(--brand-green);
+  color: #fff;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.present-btn-primary:hover {
+  background: #15803d;
+}
+.present-btn-orange {
+  background: var(--brand-orange);
+  color: #fff;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+.present-btn-orange:hover {
+  background: #ea580c;
+}
+.present-badge-on {
+  background: #dcfce7;
+  color: #166534;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.present-badge-sold {
+  background: #ffedd5;
+  color: #c2410c;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* —— Student —— */
+.present-student {
+  background: #f8fafc;
+  min-height: 100vh;
+}
+.present-student .student-header {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.present-student .period-badge {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+.present-menu-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.present-menu-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.present-menu-card .add-btn {
+  background: var(--brand-green);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.35rem 0;
+  border-radius: 0.375rem;
+  font-weight: 600;
+}
+.present-menu-card .add-btn:hover {
+  background: #15803d;
+}
+.present-sidebar-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.present-student footer {
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+/* —— Kitchen (dark) —— */
+.present-kitchen {
+  background: #0f172a;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+.present-kitchen .kitchen-sidebar {
+  background: #1e293b;
+  border-right: 1px solid #334155;
+  min-height: 100vh;
+}
+.present-kitchen .kitchen-sidebar a {
+  color: #94a3b8;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  display: block;
+}
+.present-kitchen .kitchen-sidebar a:hover,
+.present-kitchen .kitchen-sidebar a.active {
+  background: #334155;
+  color: #4ade80;
+}
+.present-kitchen .kitchen-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+}
+.present-kitchen .kitchen-card h2 {
+  color: #f1f5f9;
+}
+.present-kitchen .stat-card {
+  background: #334155;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+.present-kitchen .stat-card p:first-child {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+.present-kitchen .stat-card p:last-child {
+  color: #f8fafc;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.present-kitchen .present-table thead tr {
+  background: #334155;
+  color: #e2e8f0;
+}
+.present-kitchen input,
+.present-kitchen select {
+  background: #0f172a;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+.present-badge-supply {
+  background: #14532d;
+  color: #86efac;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+}

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canteen 智能助理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    #messages { scroll-behavior: smooth; }
+    .bubble-user {
+      background: #2563eb; color: #fff;
+      border-radius: 1.2rem 1.2rem 0.25rem 1.2rem;
+      padding: 0.55rem 0.9rem; max-width: 78%; align-self: flex-end;
+      font-size: 0.875rem; line-height: 1.5; word-break: break-word;
+    }
+    .bubble-bot {
+      background: #f1f5f9; color: #1e293b;
+      border-radius: 1.2rem 1.2rem 1.2rem 0.25rem;
+      padding: 0.55rem 0.9rem; max-width: 85%; align-self: flex-start;
+      font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+    }
+    .bubble-bot strong { font-weight: 600; }
+    .cmd-btn {
+      border: 1px solid #cbd5e1; border-radius: 999px;
+      padding: 0.3rem 0.85rem; font-size: 0.78rem; color: #475569;
+      background: #fff; cursor: pointer; white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cmd-btn:hover { background: #f0f9ff; border-color: #2563eb; color: #2563eb; }
+    .typing span {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; background: #94a3b8; margin: 0 1px;
+      animation: blink 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center px-2 py-4">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl flex flex-col" style="height:92vh;max-height:700px">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-100 shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg">🍴</div>
+      <div>
+        <p class="font-semibold text-sm text-slate-800">Canteen 智能助理</p>
+        <p class="text-xs text-green-500">● 線上服務中</p>
+      </div>
+      <a href="/" class="ml-auto text-slate-400 hover:text-slate-600 text-xs">← 返回點餐</a>
+    </div>
+
+    <!-- Messages -->
+    <div id="messages" class="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+      <div class="bubble-bot">
+        你好！我是 Canteen 智能助理。<br>
+        可以直接輸入<strong>取餐碼</strong>（如 0289-018）查詢狀態，或使用下方快捷指令。
+      </div>
+    </div>
+
+    <!-- Quick commands -->
+    <div class="px-4 py-2 flex gap-2 overflow-x-auto border-t border-slate-100 shrink-0">
+      <button class="cmd-btn" onclick="handleCmd('order')">📋 訂單狀況</button>
+      <button class="cmd-btn" onclick="handleCmd('contact')">📞 聯絡</button>
+      <button class="cmd-btn" onclick="handleCmd('help')">❓ 幫助</button>
+    </div>
+
+    <!-- Input -->
+    <div class="px-4 py-3 border-t border-slate-100 flex gap-2 shrink-0">
+      <input id="userInput" type="text" placeholder="輸入訊息或取餐碼…"
+        class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+        onkeydown="if(event.key==='Enter')sendMessage()" />
+      <button onclick="sendMessage()"
+        class="px-4 py-2 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition-colors shrink-0">
+        發送
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const SYSTEM_PROMPT = `現在你正透過一個網頁 HTML 聊天介面，直接為用戶提供即時的諮詢與協助。
+
+你是 Canteen 校園餐廳的智能助理。餐廳提供午餐訂餐服務，學生和教職員可透過網頁點餐，使用電子錢包付款。
+
+# 核心人格
+- 語氣：溫和、真誠、謙遜且極具同理心。
+- 風格：條理分明，回答簡短精煉，保持客氣。
+- 身份：當被問及身份時，堅定表明自己是 AI 助理。
+
+# 限制
+- 保持簡短，多用換行與列點提升易讀性。
+- 用戶使用什麼語言，就用相同語言回覆。
+- 不知道的資訊請誠實表明，切勿編造。
+- 重要關鍵字使用**粗體**，步驟用列點排版。`;
+
+    const PICKUP_RE = /\b([0-9]{4})-([0-9]{3})\b/;
+    const chatHistory = [];
+    let awaitingCode = false;
+
+    // ── Local commands ──────────────────────────────────────
+    function handleCmd(type) {
+      if (type === "order") {
+        appendBubble("user", "📋 訂單狀況");
+        appendBubble("bot", "請輸入你的**取餐碼**（格式：XXXX-XXX，例如 0289-018）。");
+        awaitingCode = true;
+      } else if (type === "contact") {
+        appendBubble("user", "📞 聯絡");
+        appendBubble("bot", "如需人工協助，請聯絡餐廳櫃檯或向廚房工作人員查詢。\n\n營業時間內歡迎直接前往詢問。");
+      } else if (type === "help") {
+        appendBubble("user", "❓ 幫助");
+        appendBubble("bot", "你可以：\n- 輸入**取餐碼**（如 0289-018）查詢餐點狀況\n- 點擊📋 **訂單狀況**查詢取餐進度\n- 點擊📞 **聯絡**取得聯絡資訊\n- 直接輸入問題，AI 助理會為你解答");
+      }
+    }
+
+    // ── Send message ────────────────────────────────────────
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      appendBubble("user", text);
+
+      // Check pickup code in message
+      const match = text.match(PICKUP_RE);
+      if (match || awaitingCode) {
+        awaitingCode = false;
+        const code = match ? `${match[1]}-${match[2]}` : text.toUpperCase();
+        await queryPickupStatus(code);
+        return;
+      }
+
+      // Fall through to OpenAI
+      await callOpenAI(text);
+    }
+
+    // ── Pickup status (local API call, no OpenAI) ───────────
+    async function queryPickupStatus(code) {
+      showTyping();
+      try {
+        const res = await fetch(`/api/pickups/status?code=${encodeURIComponent(code.toUpperCase())}`);
+        const data = res.ok ? await res.json() : null;
+        removeTyping();
+        if (!data || data.status === "NOT_FOUND") {
+          appendBubble("bot", `找不到取餐碼 **${code}**，請確認後再試。`);
+        } else if (data.status === "READY") {
+          appendBubble("bot", `✅ 取餐碼 **${data.code}** 餐點已完成！\n\n請前往取餐櫃檯領取。${data.expectedTime ? "\n預計時間：" + data.expectedTime : ""}`);
+        } else {
+          appendBubble("bot", `👨‍🍳 取餐碼 **${data.code}** 餐點製作中，請稍候。${data.expectedTime ? "\n預計時間：" + data.expectedTime : ""}`);
+        }
+      } catch (_) {
+        removeTyping();
+        appendBubble("bot", "無法查詢，請稍後再試。");
+      }
+    }
+
+    // ── OpenAI call ─────────────────────────────────────────
+    async function callOpenAI(text) {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+
+      chatHistory.push({ role: "user", content: text });
+      showTyping();
+
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            max_tokens: 512,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              ...chatHistory,
+            ],
+          }),
+        });
+
+        const data = res.ok ? await res.json() : null;
+        removeTyping();
+
+        if (!data) {
+          appendBubble("bot", "服務暫時出現問題，請稍後再試。");
+          return;
+        }
+        if (data.error) {
+          if (data.error.code === "invalid_api_key") {
+            localStorage.removeItem("canteen_openai_key");
+            appendBubble("bot", "API Key 無效，請重新設定。");
+            promptApiKey();
+          } else {
+            appendBubble("bot", "服務出現問題：" + (data.error.message || "未知錯誤"));
+          }
+          return;
+        }
+
+        const reply = data.choices?.[0]?.message?.content ?? "";
+        appendBubble("bot", reply);
+        chatHistory.push({ role: "assistant", content: reply });
+      } catch (_) {
+        removeTyping();
+        appendBubble("bot", "連線出現問題，請檢查網路後再試。");
+      }
+    }
+
+    // ── API key management ──────────────────────────────────
+    function getApiKey() {
+      const key = localStorage.getItem("canteen_openai_key");
+      if (!key) { promptApiKey(); return null; }
+      return key;
+    }
+
+    function promptApiKey() {
+      const key = prompt("請輸入 OpenAI API Key（儲存於本機，不會上傳）：");
+      if (key && key.trim()) {
+        localStorage.setItem("canteen_openai_key", key.trim());
+        appendBubble("bot", "API Key 已儲存。現在可以開始對話了。");
+      }
+    }
+
+    // ── UI helpers ──────────────────────────────────────────
+    function appendBubble(role, text) {
+      const el = document.createElement("div");
+      el.className = role === "user" ? "bubble-user" : "bubble-bot";
+      el.innerHTML = role === "bot"
+        ? text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+              .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        : text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      document.getElementById("messages").appendChild(el);
+      el.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    function showTyping() {
+      const el = document.createElement("div");
+      el.className = "bubble-bot typing";
+      el.id = "typing-indicator";
+      el.innerHTML = "<span></span><span></span><span></span>";
+      document.getElementById("messages").appendChild(el);
+      el.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    function removeTyping() {
+      document.getElementById("typing-indicator")?.remove();
+    }
+  </script>
+</body>
+</html>

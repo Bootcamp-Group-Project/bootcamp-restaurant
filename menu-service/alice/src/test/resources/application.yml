@@ -1,0 +1,49 @@
+#yaml-language-server: $schema=https://raw.githubusercontent.com/spring-projects/spring-boot/main/spring-boot-project/spring-boot-actuator-autoconfigure/src/main/resources/META-INF/spring-configuration-metadata.json
+
+spring:
+  application:
+    name: canteen
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/canteen_db
+    username: postgres
+    password: ${DB_PASSWORD:change-me}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: 8080
+
+canteen:
+  order:
+    start: "11:00"
+    end: "14:30"
+    zone: "Asia/Hong_Kong"
+  scheduler:
+    daily-reset-cron: "0 0 0 * * *"
+  image:
+    upload-dir: uploads/menu
+    max-bytes: 5242880
+    min-pixel: 600
+    max-pixel: 800
+
+logging:
+  level:
+    com.example.canteen: DEBUG
+    org.springframework: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

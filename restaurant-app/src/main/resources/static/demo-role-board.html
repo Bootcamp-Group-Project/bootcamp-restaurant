@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEMO Canteen Console</title>
+  <link rel="stylesheet" href="/demo/common.css">
+</head>
+<body>
+  <h1>DEMO Canteen 一頁操作台</h1>
+  <div class="card">
+    <p><strong>步驟：</strong>選擇角色 -> 直接按按鈕測試功能。這頁會自動套用該角色帳密。</p>
+    <div class="row">
+      <label for="role"><strong>角色：</strong></label>
+      <select id="role" onchange="onRoleChange()">
+        <option value="STUDENT">STUDENT</option>
+        <option value="TEACHER">TEACHER</option>
+        <option value="KITCHEN_USER">KITCHEN_USER</option>
+        <option value="ADMIN_USER">ADMIN_USER</option>
+      </select>
+      <span id="who" class="tip"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>共同（STUDENT / TEACHER）</h3>
+    <div class="row">
+      <button onclick="loadToday('/api/dishes/today')">今日 Dishes</button>
+      <button onclick="loadToday('/api/drinks/today')">今日 Drinks</button>
+      <button onclick="loadToday('/api/menus/today')">今日 Menus</button>
+    </div>
+    <p class="tip">預期：會看到 Dish 的 status（ON_LIST / SOLD_OUT）。</p>
+  </div>
+
+  <div class="card">
+    <h3>庫存操作（KITCHEN_USER / ADMIN_USER）</h3>
+    <div class="row">
+      <input id="dishId" type="number" value="1" placeholder="Dish ID">
+      <input id="balance" type="number" value="10" placeholder="New Balance">
+      <button onclick="getBalance()">查詢 Balance</button>
+      <button onclick="patchBalance()">更新 Balance</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>管理操作（僅 ADMIN_USER）</h3>
+    <div class="row">
+      <input id="name" value="Demo Dish Updated" placeholder="Dish Name">
+      <input id="price" type="number" step="0.01" value="52" placeholder="Dish Price">
+      <button onclick="patchBasic()">更新名稱/價格</button>
+    </div>
+    <p class="tip">若不是 ADMIN_USER，這個操作會被拒絕（預期 403）。</p>
+  </div>
+
+  <div class="card">
+    <h3>結果輸出</h3>
+    <textarea id="output" readonly></textarea>
+  </div>
+
+  <script src="/demo/common.js"></script>
+  <script>
+    const ROLE_CREDENTIALS = {
+      STUDENT: ["student", "student123"],
+      TEACHER: ["teacher", "teacher123"],
+      KITCHEN_USER: ["kitchen_user", "kitchen123"],
+      ADMIN_USER: ["admin_user", "admin123"]
+    };
+
+    function currentAuth() {
+      const role = document.getElementById("role").value;
+      const [u, p] = ROLE_CREDENTIALS[role];
+      return { role, header: basicAuthHeader(u, p), username: u };
+    }
+
+    function onRoleChange() {
+      const { role, username } = currentAuth();
+      document.getElementById("who").textContent = `目前以 ${role} (${username}) 測試`;
+    }
+
+    async function run(path, options = {}) {
+      const out = document.getElementById("output");
+      const { header, role } = currentAuth();
+      try {
+        const data = await callApi(path, {
+          ...options,
+          headers: { ...(options.headers || {}), Authorization: header }
+        });
+        printJson(out, { role, path, ok: true, data });
+      } catch (e) {
+        printJson(out, { role, path, ok: false, error: e.message });
+      }
+    }
+
+    function loadToday(path) {
+      run(path);
+    }
+
+    function getBalance() {
+      const id = document.getElementById("dishId").value;
+      run(`/api/dishes/${id}/balance`);
+    }
+
+    function patchBalance() {
+      const id = document.getElementById("dishId").value;
+      const balance = Number(document.getElementById("balance").value);
+      run(`/api/dishes/${id}/balance`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ balance })
+      });
+    }
+
+    function patchBasic() {
+      const id = document.getElementById("dishId").value;
+      const name = document.getElementById("name").value;
+      const price = Number(document.getElementById("price").value);
+      run(`/api/dishes/${id}/basic-info`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, price })
+      });
+    }
+
+    onRoleChange();
+  </script>
+</body>
+</html>

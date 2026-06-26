@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>系統開發方向 — 架構說明</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Microsoft JhengHei", "微軟正黑體", "PingFang TC", Arial, sans-serif;
+    color: #1F2A37;
+    background: #F5F8FB;
+    margin: 0;
+    padding: 40px 20px;
+    line-height: 1.7;
+  }
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 56px 64px;
+    box-shadow: 0 10px 30px rgba(31, 78, 120, 0.08);
+    border-radius: 12px;
+  }
+  .header {
+    border-bottom: 3px solid #1F4E78;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  .badge {
+    display: inline-block;
+    background: #1F4E78;
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  h1 { color: #1F4E78; font-size: 28px; margin: 0 0 6px; }
+  h2 {
+    color: #1F4E78;
+    font-size: 22px;
+    margin: 36px 0 12px;
+    border-left: 6px solid #1F4E78;
+    padding-left: 14px;
+  }
+  h3 { color: #2E74B5; font-size: 18px; margin: 22px 0 8px; }
+  .subtitle { color: #6B7280; font-size: 14px; }
+  p { font-size: 15px; margin: 8px 0 12px; }
+
+  .intro {
+    background: #E8F4FD;
+    border-left: 5px solid #2E74B5;
+    padding: 14px 18px;
+    margin: 20px 0 28px;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+
+  /* 架構圖 */
+  .arch {
+    background: #F5F8FB;
+    border: 1px solid #D9E1EC;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 18px 0;
+  }
+  .layer {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .layer-title {
+    color: #6B7280;
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .fe-box {
+    display: inline-block;
+    background: #2E74B5;
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  .gateway {
+    display: inline-block;
+    background: #F0AD4E;
+    color: #fff;
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .be-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .be-box {
+    background: #1F4E78;
+    color: #fff;
+    padding: 14px 6px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .be-box small {
+    display: block;
+    font-weight: normal;
+    opacity: 0.85;
+    margin-top: 4px;
+    font-size: 11px;
+  }
+  .db-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .db-box {
+    background: #fff;
+    border: 2px dashed #6B7280;
+    color: #6B7280;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .arrow {
+    text-align: center;
+    color: #6B7280;
+    font-size: 18px;
+    margin: 4px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 14px;
+    background: #fff;
+    border: 1px solid #D9E1EC;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  thead th {
+    background: #1F4E78;
+    color: #fff;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-top: 1px solid #D9E1EC;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) td { background: #F5F8FB; }
+
+  code {
+    background: #EDF2F7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #D9534F;
+  }
+
+  ul, ol { font-size: 15px; padding-left: 24px; }
+  li { margin-bottom: 4px; }
+
+  .callout {
+    background: #FFF7E6;
+    border-left: 5px solid #F0AD4E;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  /* Scrum 流程圖 */
+  .scrum {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .scrum-card {
+    background: #F5F8FB;
+    border-top: 4px solid #2E74B5;
+    padding: 12px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .scrum-card .day {
+    color: #2E74B5;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .scrum-card .name {
+    font-weight: bold;
+    margin: 4px 0;
+    font-size: 15px;
+  }
+  .scrum-card .desc {
+    font-size: 12px;
+    color: #6B7280;
+  }
+
+  .footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #D9E1EC;
+    color: #6B7280;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="header">
+    <div class="badge">DEVELOPMENT DIRECTION</div>
+    <h1>系統開發方向 — 架構說明</h1>
+    <div class="subtitle">校園餐廳 POS 系統 · 技術策略文件 · v1.2 · 2026-06-03</div>
+  </div>
+
+  <div class="intro">
+    本系統採 <strong>Microservice（微服務）架構</strong>，將後端拆分為 <strong>5 大獨立服務</strong>，前端整合為 <strong>1 套統一介面</strong>。
+    <strong>Wallet</strong> 獨立以保留未來 SaaS 銷售彈性；<strong>Cart 與 Order 合併為 Checkout Service</strong>，以確保「加入購物車 → 下單 → 訂金」流程之資料一致性。
+    開發團隊以 <strong>Agile Scrum</strong> 流程運作，每兩週一個 Sprint 並進行 Review，確保進度透明、需求可調整。
+  </div>
+
+  <!-- ============== 一、整體架構 ============== -->
+  <h2>一、整體架構總覽</h2>
+
+  <div class="arch">
+    <div class="layer">
+      <div class="layer-title">FRONTEND（靜態 HTML · TailwindCSS CDN）</div>
+      <div class="fe-box">Alice :8080/index.html &nbsp;·&nbsp; Wallet :8082/index.html &nbsp;·&nbsp; Hub :8082/hub.html</div>
+    </div>
+
+    <div class="arrow">▼</div>
+
+    <div class="layer">
+      <div class="layer-title">NGINX 反向代理（交通警察 · Port 80 / 443）</div>
+      <div class="gateway">Nginx — 統一入口 · 路由分流 · CORS · 安全屏障</div>
+    </div>
+
+    <div class="arrow">▼</div>
+
+    <div class="layer">
+      <div class="layer-title">BACKEND（5 大微服務 · Java 21 · Spring Boot · PostgreSQL）</div>
+      <div class="be-grid">
+        <div class="be-box">① Identity<br><small>身分認證<br>:8081</small></div>
+        <div class="be-box">② Wallet<br><small>錢包金流<br>:8082</small></div>
+        <div class="be-box">③ Menu(Alice)<br><small>菜單庫存<br>:8080</small></div>
+        <div class="be-box" style="background:#2E74B5;">④ Order<br><small>訂單結帳<br>:8084</small></div>
+        <div class="be-box">⑤ Pickup<br><small>取餐核銷<br>:8085</small></div>
+      </div>
+    </div>
+
+    <div class="arrow">▼</div>
+
+    <div class="layer">
+      <div class="layer-title">DATA LAYER（PostgreSQL 16 — 依團隊邊界共用）</div>
+      <div class="db-grid" style="grid-template-columns: repeat(3,1fr);">
+        <div class="db-box"><strong>canteen_login</strong><br><span style="font-size:11px;">① Identity</span></div>
+        <div class="db-box"><strong>canteen_db</strong><br><span style="font-size:11px;">③ Menu (Alice)<br>⑤ Pickup</span></div>
+        <div class="db-box"><strong>restaurant_pos</strong><br><span style="font-size:11px;">② Wallet<br>④ Order</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p>服務之間以 <strong>REST HTTP</strong> 通訊，禁止直接跨庫查詢。同一開發團隊擁有的服務可共用一個 PostgreSQL 資料庫（獨立 schema / table prefix），降低本地開發與部署的運維成本。</p>
+
+  <!-- ============== 二、5 大後端服務 ============== -->
+  <h2>二、5 大後端服務說明</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">#</th>
+        <th style="width:18%">服務名稱</th>
+        <th style="width:30%">主要資料表</th>
+        <th>負責功能</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>①</strong></td>
+        <td><strong>Identity Service</strong><br>身分認證服務<br><code>:8081</code><br><code>canteen_login</code></td>
+        <td>USERS、Students、Teachers、Admin_Users、Kitchen_Users</td>
+        <td>註冊 / 登入、BCrypt 密碼、角色分級（STUDENT / TEACHER / ADMIN / KITCHEN）<br><code>POST /api/users/register</code><br><code>POST /api/users/login</code> → 回傳 <code>userId, role, phone</code><br><code>POST /api/users/change-password</code></td>
+      </tr>
+      <tr>
+        <td><strong>②</strong></td>
+        <td><strong>Wallet Service</strong><br>錢包金流服務<br><code>:8082</code><br><code>restaurant_pos</code></td>
+        <td>Wallets、Wallet_Transactions、StripeTopupRecords</td>
+        <td>餘額管理、Recharge / Deduct / Refund、Stripe Checkout 儲值流程（TWD 零小數）<br>Idempotency key 防重複扣款</td>
+      </tr>
+      <tr>
+        <td><strong>③</strong></td>
+        <td><strong>Menu Service (Alice)</strong><br>菜單庫存服務<br><code>:8080</code><br><code>canteen_db</code></td>
+        <td>Dishes、Drinks、Menus</td>
+        <td>每日菜單建立、庫存管理、Admin 後台、學生 / 老師點餐介面<br>前端靜態 HTML，Local Storage 管理購物車</td>
+      </tr>
+      <tr style="background:#E8F4FD;">
+        <td><strong>④</strong></td>
+        <td><strong>Order Service</strong><br>訂單結帳服務<br><code>:8084</code><br><code>restaurant_pos</code></td>
+        <td>Orders、Order_Items</td>
+        <td>建立訂單、訂金計算（Qty≥4 → $50）、狀態流轉（PENDING_PAY → DEPOSIT_PAID → FULLY_PAID → COMPLETE）<br>狀態更新時呼叫 Pickup Service 建立取餐記錄</td>
+      </tr>
+      <tr>
+        <td><strong>⑤</strong></td>
+        <td><strong>Pickup Service</strong><br>取餐核銷服務<br><code>:8085</code><br><code>canteen_db</code></td>
+        <td>Meal_Pickups</td>
+        <td>核銷驗證、預計 / 實際取餐時間<br>取餐碼格式：手機末4碼-訂單末3碼<br>由 Order Service 在付款時自動呼叫建立</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 二之一、設計決策說明 ============== -->
+  <h2>二之一、關鍵設計決策</h2>
+
+  <table>
+    <thead>
+      <tr><th style="width:26%">議題</th><th style="width:24%">決策</th><th>理由</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Wallet 是否獨立？</strong></td>
+        <td>✅ 獨立服務</td>
+        <td>保留未來作為 SaaS 銷售予其他學校、福利社、影印站之彈性；錢包之查詢、儲值、退款本身即為獨立業務領域</td>
+      </tr>
+      <tr>
+        <td><strong>Cart 是否獨立？</strong></td>
+        <td>❌ 併入 Checkout</td>
+        <td>Cart 與 Order 屬於同一條結帳鏈、共用同一筆資料生命週期；合併可確保資料一致性，避免分散式交易（Saga）之開發成本</td>
+      </tr>
+      <tr>
+        <td><strong>Wallet 與 Order 是否合併？</strong></td>
+        <td>❌ 不合併</td>
+        <td>合併會綁死錢包與訂單，無法獨立銷售；改以 Saga Pattern 處理「扣款 + 建單」之最終一致性（補償機制：扣款失敗則訂單回滾、建單失敗則自動退款）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 二之二、Nginx 角色說明 ============== -->
+  <h2>二之二、Nginx — 系統的「交通警察」</h2>
+
+  <p>Nginx 是擺在 <strong>5 個 Java 微服務之前</strong>的反向代理（Reverse Proxy）。前端瀏覽器只認識一條大馬路 <code>http://54.82.49.xxx</code>（Port 80），而 Nginx 站在 Port 80 攔截所有流量，依路徑分流到正確的後端服務。</p>
+
+  <div class="callout">
+    <strong>部署方式：</strong>
+    <ul style="margin:6px 0;">
+      <li><strong>有 Docker：</strong>使用官方 <code>nginx</code> image，已內置，掛載 <code>nginx.conf</code> 即可。</li>
+      <li><strong>無 Docker：</strong>在 EC2 直接安裝：<code>sudo apt install nginx</code> → <code>nano /etc/nginx/nginx.conf</code> → <code>sudo nginx -t</code> → <code>sudo systemctl restart nginx</code></li>
+    </ul>
+  </div>
+
+  <h3>四大職責</h3>
+
+  <table>
+    <thead>
+      <tr><th style="width:24%">職責</th><th>說明</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>① 指揮交通（反向代理）</strong></td>
+        <td>
+          前端只認 <code>http://54.82.49.xxx</code> 一條馬路，Nginx 看到 URL 路徑就分流：
+          <ul style="margin:6px 0;">
+            <li><code>/api/identity/</code> 👉 Identity Service（Port 8080）</li>
+            <li><code>/api/wallet/</code> &nbsp;👉 Wallet Service（Port 8081）</li>
+            <li><code>/api/menu/</code> &nbsp;&nbsp;👉 Menu Service（Port 8082）</li>
+            <li><code>/api/checkout/</code> 👉 Checkout Service（Port 8084）</li>
+            <li><code>/api/pickup/</code> &nbsp;👉 Pickup Service（Port 8085）</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>② 隱藏隱私（安全性）</strong></td>
+        <td>
+          如果<strong>不用 Nginx</strong>，就必須把 AWS 防火牆的 Port <code>8080~8085</code> 通通暴露在網際網路上，讓駭客直接攻擊 Java 程式或資料庫。
+          <strong>用了 Nginx</strong>，對外只開放 Port 80 / 443，內部 Java 服務全部在防火牆後面，無法被外人直接戳。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>③ 抗震防崩潰（隔離故障）</strong></td>
+        <td>
+          5 個 Java 服務有時可能因連不到資料庫而 Restarting。Nginx 會偵測下游節點狀態，<strong>單一服務崩潰時，其他路徑仍可正常運作</strong>（例如 Wallet 掛了，使用者仍可瀏覽菜單），亦可設定 backup 節點自動接手。
+        </td>
+      </tr>
+      <tr>
+        <td><strong>④ 解決 CORS（跨域問題終結者）</strong></td>
+        <td>
+          前後端分離時，瀏覽器會因安全機制鎖死「網頁在 A 網址、API 在 B 網址」之請求。
+          <strong>用了 Nginx</strong>，前端與所有 API 都走同一個域名（同一條大馬路），瀏覽器視為 same-origin，<strong>CORS 問題自然消失</strong>。
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>nginx.conf 路由片段（範例）</h3>
+  <pre style="background:#1F2A37; color:#E4E8EE; padding:18px; border-radius:6px; font-size:13px; overflow-x:auto; line-height:1.5;">
+upstream identity_service { server 127.0.0.1:8080; }
+upstream wallet_service   { server 127.0.0.1:8081; }
+upstream menu_service     { server 127.0.0.1:8082; }
+upstream checkout_service { server 127.0.0.1:8084; }
+upstream pickup_service   { server 127.0.0.1:8085; }
+
+server {
+    listen 80;
+    server_name 54.82.49.xxx;
+
+    location / {                                   # 前端 React 靜態檔
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/identity/  { proxy_pass http://identity_service/; }
+    location /api/wallet/    { proxy_pass http://wallet_service/; }
+    location /api/menu/      { proxy_pass http://menu_service/; }
+    location /api/checkout/  { proxy_pass http://checkout_service/; }
+    location /api/pickup/    { proxy_pass http://pickup_service/; }
+}</pre>
+  <p style="color:#6B7280; font-size:13px;">※ 完整檔案見 <code>nginx.conf</code>（已含日誌、Gzip、健康檢查、Header 傳遞等完整設定）。</p>
+
+  <!-- ============== 三、為什麼採 Microservice ============== -->
+  <h2>三、為什麼採 Microservice？</h2>
+
+  <table>
+    <thead>
+      <tr><th style="width:22%">優勢</th><th>說明 / 對本案的意義</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>獨立部署</strong></td><td>單一服務改版不影響其他模組，例如菜單服務更新不會中斷取餐核銷。</td></tr>
+      <tr><td><strong>獨立擴展</strong></td><td>午餐尖峰時段，可單獨擴充 Order / Pickup 服務之資源，省成本。</td></tr>
+      <tr><td><strong>獨立銷售</strong></td><td>Wallet Service 可獨立銷售給其他校園、福利社或社區商店；Menu + Order 亦可包裝為小型餐廳 POS 方案。</td></tr>
+      <tr><td><strong>技術選擇彈性</strong></td><td>各服務可使用最合適之技術堆疊，未來重寫某一服務也不影響全局。</td></tr>
+      <tr><td><strong>故障隔離</strong></td><td>單一服務出問題時，其他模組仍可運作（例如錢包暫停，菜單仍可瀏覽）。</td></tr>
+      <tr><td><strong>團隊分工清晰</strong></td><td>Scrum 團隊可依服務分工（A 組負責 Identity + Wallet、B 組負責 Menu + Order + Pickup）。</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 四、未來擴展與獨立銷售 ============== -->
+  <h2>四、未來擴展與獨立銷售方向</h2>
+
+  <table>
+    <thead>
+      <tr><th style="width:24%">服務</th><th style="width:30%">獨立銷售方向</th><th>潛在客戶</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Wallet Service</td><td>校園 / 企業電子錢包 SaaS<br><span style="color:#6B7280; font-size:12px;">（獨立部署、與訂單脫鉤）</span></td><td>其他學校、補習班、企業員工餐廳、社區商店</td></tr>
+      <tr><td>Menu + Checkout</td><td>輕量級餐廳 POS 系統<br><span style="color:#6B7280; font-size:12px;">（含購物車、訂單、訂金）</span></td><td>小型餐廳、咖啡廳、街邊小店</td></tr>
+      <tr><td>Pickup Service</td><td>外帶 / 取餐管理 SaaS</td><td>連鎖速食、自取便當店、訂閱式餐盒</td></tr>
+      <tr><td>Identity Service</td><td>校園 SSO（單一登入）</td><td>圖書館、宿舍門禁、社團報名等校內系統</td></tr>
+      <tr><td>整合 5 服務</td><td>校園生活整合平台</td><td>大專院校、私立中小學集團</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>商業價值：</strong>未來每個服務皆可包裝為 SaaS 訂閱模式，按月收費。即使主案為校園餐廳，仍可在其他垂直市場創造延伸收入。
+  </div>
+
+  <!-- ============== 五、技術堆疊 ============== -->
+  <h2>五、技術堆疊（建議）</h2>
+
+  <table>
+    <thead>
+      <tr><th style="width:24%">層級</th><th style="width:30%">技術</th><th>用途</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Frontend</td><td>靜態 HTML + TailwindCSS CDN</td><td>各服務各自提供 static/index.html；無獨立前端建置流程</td></tr>
+      <tr><td>API Gateway / 反向代理</td><td><strong>Nginx</strong>（首選，交通警察）/ Kong / Traefik</td><td>統一入口、流量分流至 5 大服務、CORS 處理、隱藏內部 Port、靜態檔案託管<br><span style="color:#6B7280; font-size:12px;">本地開發階段可暫用 <code>@CrossOrigin(origins="*")</code>；正式環境必上 Nginx</span></td></tr>
+      <tr><td>Backend</td><td>Java 21 + Spring Boot 4.1.0-RC1<br>Java 17 + Spring Boot 3.2.5（login）</td><td>5 大微服務皆以 Spring Boot + Maven 建置</td></tr>
+      <tr><td>ORM</td><td>Spring Data JPA + Hibernate + Lombok</td><td>各服務獨立 Entity / Repository 層</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 16（3 個資料庫）</td><td>canteen_login / canteen_db / restaurant_pos，全部 <code>postgres/123456</code> 本地連線</td></tr>
+      <tr><td>Payment</td><td>Stripe Java SDK 32.1.0</td><td>wallet-service Stripe Checkout 儲值流程</td></tr>
+      <tr><td>Testing</td><td>JUnit 5 + Mockito (H2 in-memory)</td><td>unit tests for service layer; no Spring context loaded</td></tr>
+      <tr><td>服務間通訊</td><td>Spring RestClient (HTTP)</td><td>order-service → pickup-service 建立取餐記錄</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 六、Agile Scrum ============== -->
+  <h2>六、Agile Scrum 開發流程</h2>
+
+  <p>專案以 <strong>2 週為一個 Sprint</strong>，6 週共 3 個 Sprint 完成 Phase 1–2。團隊角色與儀式如下：</p>
+
+  <h3>6.1 團隊角色</h3>
+  <table>
+    <thead>
+      <tr><th style="width:22%">角色</th><th style="width:24%">由誰擔任</th><th>職責</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Product Owner (PO)</td><td>客戶代表 / PM</td><td>定義需求優先順序、驗收成果</td></tr>
+      <tr><td>Scrum Master (SM)</td><td>Tech Lead</td><td>排除阻礙、主持儀式、追蹤進度</td></tr>
+      <tr><td>開發團隊</td><td>2 後端 + 2 前端 + 1 QA/DevOps</td><td>實作、自我管理、跨功能協作</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Scrum 儀式</h3>
+  <div class="scrum">
+    <div class="scrum-card">
+      <div class="day">每 Sprint 第一天</div>
+      <div class="name">Sprint Planning</div>
+      <div class="desc">挑選 Backlog 中之項目<br>估算工時、設定目標</div>
+    </div>
+    <div class="scrum-card">
+      <div class="day">每天 15 分鐘</div>
+      <div class="name">Daily Standup</div>
+      <div class="desc">昨天做了什麼<br>今天要做什麼<br>是否有阻礙</div>
+    </div>
+    <div class="scrum-card">
+      <div class="day">每 Sprint 最後一天</div>
+      <div class="name">Sprint Review</div>
+      <div class="desc">向 PO / 客戶 Demo<br>驗收已完成項目<br>收集回饋</div>
+    </div>
+    <div class="scrum-card">
+      <div class="day">Review 之後</div>
+      <div class="name">Retrospective</div>
+      <div class="desc">回顧本 Sprint 流程<br>持續改善<br>下個 Sprint 套用</div>
+    </div>
+  </div>
+
+  <h3>6.3 Sprint 安排（對應 Phase 1–2）</h3>
+  <table>
+    <thead>
+      <tr><th style="width:18%">Sprint</th><th style="width:18%">週次</th><th>Sprint Goal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Sprint 1</strong></td><td>W1 – W2 前半</td><td>完成 Identity + Wallet 兩大服務（含手動入賬功能）</td></tr>
+      <tr><td><strong>Sprint 2</strong></td><td>W2 後半 – W3</td><td>完成 Menu + Checkout (Cart+Order) + Pickup 三大服務、整合測試、UAT 驗收</td></tr>
+      <tr><td>後續 Sprint 3+</td><td>W4 起</td><td>金流自動化、優化、上線（Phase 3–4）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.4 開發工具與管理</h3>
+  <ul>
+    <li><strong>需求 / Backlog：</strong>Jira 或 Linear，依優先度排序</li>
+    <li><strong>程式碼：</strong>GitHub，每個微服務一個 Repo（Mono-repo 亦可）</li>
+    <li><strong>Code Review：</strong>所有 PR 至少 1 人 Review 才能合併</li>
+    <li><strong>Definition of Done：</strong>程式完成 + 單元測試通過 + Code Review 通過 + 部署至 Staging 可運行</li>
+    <li><strong>每週客戶 Demo：</strong>於 Sprint Review 中向業主展示進度，及時調整方向</li>
+  </ul>
+
+  <!-- ============== 七、結語 ============== -->
+  <h2>七、結語</h2>
+  <p>本系統以 <strong>Microservice + Agile Scrum</strong> 為核心策略，兼顧「<strong>短期快速上線</strong>」與「<strong>長期靈活擴充</strong>」兩大目標：</p>
+  <ul>
+    <li>短期：3 週內以 6 人團隊完成 Phase 1–2，依「現金 / 支票模式」上線運行。</li>
+    <li>中期：Phase 3–4 加入金流自動化、推播通知，達成完整自動化。</li>
+    <li>長期：每個服務皆可獨立銷售予其他學校或場域，創造延伸商業價值。</li>
+  </ul>
+  <p>透過每兩週 Sprint Review，業主可全程參與並調整需求，確保最終成果貼近實際營運需要。</p>
+
+  <div class="footer">
+    校園餐廳 POS 系統 · 系統開發方向架構說明 · v1.3（新增 Nginx 交通警察章節）· 2026-06-05
+  </div>
+
+</div>
+
+</body>
+</html>

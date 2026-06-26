@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Canteen</title>
+  <link rel="stylesheet" href="/canteen-present.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { green: "#16a34a", orange: "#f97316" }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="present-ui present-admin text-slate-800">
+  <div class="min-h-screen flex">
+    <aside class="admin-sidebar w-60 shrink-0 hidden md:block">
+      <div class="p-5 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🍽</span>
+          <div>
+            <h1 class="font-bold text-base">Admin Panel</h1>
+            <p class="text-xs text-emerald-200/80">午餐訂餐系統</p>
+          </div>
+        </div>
+      </div>
+      <nav class="p-3 space-y-1 text-sm">
+        <a href="#section-overview" class="active block px-3 py-2 rounded-lg">首頁總覽</a>
+        <a href="#section-dish" class="block px-3 py-2 rounded-lg">菜單管理</a>
+        <a href="#section-dish" class="block px-3 py-2 rounded-lg pl-6 text-emerald-100/90">Dish 菜單管理</a>
+        <a href="#section-drink" class="block px-3 py-2 rounded-lg pl-6 text-emerald-100/90">Drink 菜單管理</a>
+        <a href="#section-orders" class="block px-3 py-2 rounded-lg">訂單管理</a>
+        <a href="#section-order-window" class="block px-3 py-2 rounded-lg">訂購時段設定</a>
+        <a href="#section-recharge" class="block px-3 py-2 rounded-lg">用戶充值管理</a>
+      </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="admin-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-semibold text-slate-700">午餐訂餐系統 — 管理後台</h2>
+        <div class="flex items-center gap-4 text-sm text-slate-600">
+          <span class="relative">🔔 <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">3</span></span>
+          <span class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 管理員</span>
+        </div>
+      </header>
+
+    <main class="flex-1 p-5 space-y-5">
+      <section id="section-overview" class="present-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-semibold text-lg text-slate-800">菜單資料總儲存</h2>
+          <p class="text-sm text-slate-500">將目前所有菜單（Dish 與 Drink）資料儲存至系統，並同步 Student / Teacher 前台。</p>
+        </div>
+        <button type="button" onclick="saveAllData()" class="present-btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2">
+          💾 儲存全部資料
+        </button>
+      </section>
+
+      <section id="section-order-window" class="present-card p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="font-semibold text-lg text-slate-800">訂購時段設定</h2>
+            <p class="text-sm text-slate-500">設定 Student / Teacher 可下單的時間範圍。啟用後，時段以外將無法下單。</p>
+          </div>
+          <span id="orderWindowCurrent" class="text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"></span>
+        </div>
+        <div class="space-y-3">
+          <div class="grid sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <p class="col-span-full text-xs font-medium text-slate-500">時段一</p>
+            <label class="block text-sm">
+              <span class="text-slate-600">開始時間</span>
+              <input id="orderWindowStart1" type="time" class="mt-1 border rounded px-2 py-1.5 w-full" />
+            </label>
+            <label class="block text-sm">
+              <span class="text-slate-600">結束時間</span>
+              <input id="orderWindowEnd1" type="time" class="mt-1 border rounded px-2 py-1.5 w-full" />
+            </label>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <p class="col-span-full text-xs font-medium text-slate-500">時段二</p>
+            <label class="block text-sm">
+              <span class="text-slate-600">開始時間</span>
+              <input id="orderWindowStart2" type="time" class="mt-1 border rounded px-2 py-1.5 w-full" />
+            </label>
+            <label class="block text-sm">
+              <span class="text-slate-600">結束時間</span>
+              <input id="orderWindowEnd2" type="time" class="mt-1 border rounded px-2 py-1.5 w-full" />
+            </label>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3 items-end">
+            <label class="block text-sm">
+              <span class="text-slate-600">時區</span>
+              <input id="orderWindowZone" type="text" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="Asia/Hong_Kong" />
+            </label>
+            <label class="flex items-center gap-2 text-sm pb-1.5">
+              <input id="orderWindowEnforced" type="checkbox" class="w-4 h-4" />
+              <span class="text-slate-600">啟用時段限制</span>
+            </label>
+          </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button type="button" onclick="saveOrderWindowSettings()" class="present-btn-primary px-5 py-2 text-sm">💾 儲存訂購時段</button>
+          <button type="button" onclick="resetOrderWindowSettings()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">回復預設</button>
+        </div>
+      </section>
+
+      <section id="section-dish" class="present-card overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+          <h2 class="font-semibold text-lg text-slate-800">Dish 菜單管理</h2>
+          <button type="button" onclick="addDish()" class="present-btn-primary px-4 py-2 text-sm">+ 新增 Dish</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="present-table w-full text-sm">
+            <thead>
+              <tr>
+                <th class="text-left px-4 py-3">Dish</th>
+                <th class="text-left px-4 py-3">價格</th>
+                <th class="text-left px-4 py-3">庫存（唯讀・廚房管理）</th>
+                <th class="text-left px-4 py-3">狀態</th>
+                <th class="text-left px-4 py-3">Special Request</th>
+                <th class="text-left px-4 py-3">照片</th>
+                <th class="text-left px-4 py-3">操作</th>
+              </tr>
+            </thead>
+            <tbody id="dishTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="section-drink" class="present-card overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+          <h2 class="font-semibold text-lg text-slate-800">Drink 菜單管理</h2>
+          <button type="button" onclick="addDrink()" class="present-btn-orange px-4 py-2 text-sm">+ 新增 Drink</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="present-table w-full text-sm">
+            <thead>
+              <tr>
+                <th class="text-left px-4 py-3">Drink</th>
+                <th class="text-left px-4 py-3">價格</th>
+                <th class="text-left px-4 py-3">狀態</th>
+                <th class="text-left px-4 py-3">Special Request</th>
+                <th class="text-left px-4 py-3">照片</th>
+                <th class="text-left px-4 py-3">操作</th>
+              </tr>
+            </thead>
+            <tbody id="drinkTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="section-orders" class="present-card overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+          <div>
+            <h2 class="font-semibold text-lg text-slate-800">訂單管理 — Dish 銷量（依日期）</h2>
+            <p class="text-sm text-slate-500">依日期分組，列出各菜式售出份數與銷量金額，每個日期最尾一行為當日總計。金額以下單當時單價累計。</p>
+          </div>
+          <button type="button" onclick="renderSalesTable()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">重新整理</button>
+        </div>
+        <div id="salesReportContainer" class="p-4 space-y-5"></div>
+      </section>
+
+      <!-- 用戶充值管理 -->
+      <section id="section-recharge" class="present-card p-4 space-y-4">
+        <div>
+          <h2 class="font-semibold text-lg text-slate-800 mb-1">用戶充值管理</h2>
+          <p class="text-sm text-slate-500">查詢用戶錢包並為其充值（連線至 wallet-service port 8082）。</p>
+        </div>
+        <div class="flex flex-wrap gap-3 items-end">
+          <label class="block text-sm">
+            <span class="text-slate-600">電話號碼（8位）</span>
+            <input id="rc-phone" type="text" maxlength="8" placeholder="12345678" class="mt-1 border rounded-lg px-3 py-2 w-36 text-sm" />
+          </label>
+          <button type="button" onclick="lookupWallet()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 self-end">查詢錢包</button>
+        </div>
+        <div id="rc-wallet-info" class="hidden border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50">
+          <p class="text-sm text-slate-700">用戶 ID：<span id="rc-userId" class="font-medium"></span>
+             角色：<span id="rc-role" class="font-medium"></span>
+             錢包 ID：<span id="rc-walletId" class="font-medium"></span>
+             目前餘額：<span id="rc-balance" class="font-medium text-brand-green"></span></p>
+          <div class="flex flex-wrap gap-3 items-end">
+            <label class="block text-sm">
+              <span class="text-slate-600">充值金額 ($)</span>
+              <input id="rc-amount" type="number" min="1" placeholder="100" class="mt-1 border rounded-lg px-3 py-2 w-32 text-sm" />
+            </label>
+            <label class="block text-sm flex-1">
+              <span class="text-slate-600">備註</span>
+              <input id="rc-desc" type="text" placeholder="Admin 充值" class="mt-1 border rounded-lg px-3 py-2 w-full text-sm" />
+            </label>
+            <button type="button" onclick="doRecharge()" class="present-btn-primary px-5 py-2 text-sm self-end">確認充值</button>
+          </div>
+          <p id="rc-msg" class="text-sm hidden"></p>
+        </div>
+      </section>
+
+
+    </main>
+      <footer class="px-5 py-3 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+        © Canteen 午餐訂餐平台 · 管理後台
+      </footer>
+    </div>
+  </div>
+
+  <script src="/canteen-store.js"></script>
+  <script>
+    // ORDER_BASE, LOGIN_BASE, WALLET_BASE, PICKUP_BASE already defined in canteen-store.js
+
+    const state = loadCanteenState();
+    rehydrateMenuImagesFromStore(state);
+
+    function getMenuItemName(menuId) {
+      const dish = (state.dishes || []).find(d => d.id == menuId);
+      if (dish) return dish.name;
+      const drink = (state.drinks || []).find(d => d.id == menuId);
+      if (drink) return drink.name;
+      return `#${menuId}`;
+    }
+
+    function dishStatusBadge(status) {
+      if (status === "SOLD_OUT") return '<span class="present-badge-sold">SOLD_OUT</span>';
+      return '<span class="present-badge-on">ON_LIST</span>';
+    }
+
+    function renderAdminTables() {
+      const dishBody = document.getElementById("dishTableBody");
+      dishBody.innerHTML = state.dishes.map(d => `
+        <tr class="border-t">
+          <td class="px-4 py-3"><input id="dish-name-${d.id}" class="border rounded px-2 py-1 w-40" value="${d.name}" /></td>
+          <td class="px-4 py-3"><input id="dish-price-${d.id}" class="border rounded px-2 py-1 w-24" type="number" step="0.01" value="${d.price}" /></td>
+          <td class="px-4 py-3"><span class="inline-flex items-center px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-medium">尚餘 ${d.balance}</span></td>
+          <td class="px-4 py-3">${dishStatusBadge(d.status)}</td>
+          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="border rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
+          <td class="px-4 py-3">
+            <img src="${resolveItemImage(d)}" alt="" class="h-14 w-14 object-cover rounded border mb-1" />
+            <input type="file" accept="image/*" class="text-xs mb-1" onchange="setDishImage(${d.id}, this)" />
+            <div class="text-xs text-slate-500">檔名：${d.imageFileName || "未上載"}</div>
+          </td>
+          <td class="px-4 py-3">
+            <button type="button" onclick="deleteDish(${d.id})"
+              class="text-red-600 hover:text-red-800 text-sm font-medium">🗑 刪除</button>
+          </td>
+        </tr>
+      `).join("");
+
+      const drinkBody = document.getElementById("drinkTableBody");
+      drinkBody.innerHTML = state.drinks.map(d => `
+        <tr class="border-t">
+          <td class="px-4 py-3"><input id="drink-name-${d.id}" class="border rounded px-2 py-1 w-40" value="${d.name}" /></td>
+          <td class="px-4 py-3"><input id="drink-price-${d.id}" class="border rounded px-2 py-1 w-24" type="number" step="0.01" value="${d.price}" /></td>
+          <td class="px-4 py-3"><span class="present-badge-on">ON_LIST</span></td>
+          <td class="px-4 py-3"><input id="drink-options-${d.id}" class="border rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
+          <td class="px-4 py-3">
+            <img src="${resolveItemImage(d)}" alt="" class="h-14 w-14 object-cover rounded border mb-1" />
+            <input type="file" accept="image/*" class="text-xs mb-1" onchange="setDrinkImage(${d.id}, this)" />
+            <div class="text-xs text-slate-500">檔名：${d.imageFileName || "未上載"}</div>
+          </td>
+          <td class="px-4 py-3">
+            <button type="button" onclick="deleteDrink(${d.id})"
+              class="text-red-600 hover:text-red-800 text-sm font-medium">🗑 刪除</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function parseOptions(value) {
+      return value.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    async function applyImageFromFile(type, item, file) {
+      if (!file || !item) return;
+      try {
+        const result = await persistMenuItemImage(type, item.id, file);
+        applyUploadedImageToItem(item, result);
+        collectFormIntoState();
+        saveCanteenStateAndSync(state);
+        renderAdminTables();
+        alert(`照片已上載並同步至 Student / Teacher（${file.name}）。`);
+      } catch (e) {
+        alert(e.message || "照片上載失敗");
+      }
+    }
+
+    function setDishImage(id, input) {
+      const dish = state.dishes.find(d => d.id === id);
+      if (!dish || !input.files || !input.files[0]) return;
+      applyImageFromFile("dish", dish, input.files[0]);
+      input.value = "";
+    }
+
+    function setDrinkImage(id, input) {
+      const drink = state.drinks.find(d => d.id === id);
+      if (!drink || !input.files || !input.files[0]) return;
+      applyImageFromFile("drink", drink, input.files[0]);
+      input.value = "";
+    }
+
+    function collectFormIntoState() {
+      state.dishes.forEach(d => {
+        const nameEl = document.getElementById(`dish-name-${d.id}`);
+        if (!nameEl) return;
+        const keepImageKey = d.imageStorageKey;
+        const keepImageFileName = d.imageFileName;
+        d.name = nameEl.value.trim();
+        d.price = Number(document.getElementById(`dish-price-${d.id}`).value);
+        // 庫存量由廚房管理，Admin 不可更改：保留現有 balance
+        d.options = parseOptions(document.getElementById(`dish-options-${d.id}`).value);
+        if (keepImageKey) d.imageStorageKey = keepImageKey;
+        if (keepImageFileName) d.imageFileName = keepImageFileName;
+      });
+      state.drinks.forEach(d => {
+        const nameEl = document.getElementById(`drink-name-${d.id}`);
+        if (!nameEl) return;
+        const keepImageKey = d.imageStorageKey;
+        const keepImageFileName = d.imageFileName;
+        d.name = nameEl.value.trim();
+        d.price = Number(document.getElementById(`drink-price-${d.id}`).value);
+        d.options = parseOptions(document.getElementById(`drink-options-${d.id}`).value);
+        if (keepImageKey) d.imageStorageKey = keepImageKey;
+        if (keepImageFileName) d.imageFileName = keepImageFileName;
+      });
+    }
+
+    function nextDishId() {
+      return state.dishes.length ? Math.max(...state.dishes.map(d => d.id)) + 1 : 1;
+    }
+
+    function nextDrinkId() {
+      return state.drinks.length ? Math.max(...state.drinks.map(d => d.id)) + 1 : 101;
+    }
+
+    function addDish() {
+      const dish = {
+        id: nextDishId(),
+        name: "新菜式",
+        price: 0,
+        balance: 0,
+        status: "SOLD_OUT",
+        image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
+        options: [],
+        imageFileName: ""
+      };
+      state.dishes.push(dish);
+      saveCanteenState(state);
+      renderAdminTables();
+      alert(`已新增 Dish #${dish.id}。`);
+    }
+
+    function addDrink() {
+      const drink = {
+        id: nextDrinkId(),
+        name: "新飲品",
+        price: 0,
+        status: "ON_LIST",
+        options: [],
+        imageFileName: ""
+      };
+      state.drinks.push(drink);
+      saveCanteenState(state);
+      renderAdminTables();
+      alert(`已新增 Drink #${drink.id}。`);
+    }
+
+    function saveAllData() {
+      collectFormIntoState();
+      try {
+        saveCanteenStateAndSync(state);
+        renderAdminTables();
+        alert("已完成儲存：已清除並重新同步 Teacher / Student 前台菜單（含照片）。");
+      } catch (e) {
+        alert(e.message || "儲存失敗");
+      }
+    }
+
+    function deleteDish(id) {
+      const dish = state.dishes.find(d => d.id === id);
+      if (!dish) return;
+      if (!confirm(`確定要刪除 Dish「${dish.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
+        return;
+      }
+      collectFormIntoState();
+      deleteDishFromState(state, id);
+      saveCanteenStateAndSync(state);
+      renderAdminTables();
+      alert(`已刪除 Dish #${id}，並同步前台。`);
+    }
+
+    function deleteDrink(id) {
+      const drink = state.drinks.find(d => d.id === id);
+      if (!drink) return;
+      if (!confirm(`確定要刪除 Drink「${drink.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
+        return;
+      }
+      collectFormIntoState();
+      deleteDrinkFromState(state, id);
+      saveCanteenStateAndSync(state);
+      renderAdminTables();
+      alert(`已刪除 Drink #${id}，並同步前台。`);
+    }
+
+    // ── 訂購時段設定 ───────────────────────────────
+    function renderOrderWindowForm() {
+      const cfg = loadOrderWindow();
+      const slots = cfg.slots || [];
+      document.getElementById("orderWindowStart1").value = (slots[0] || {}).start || "";
+      document.getElementById("orderWindowEnd1").value   = (slots[0] || {}).end   || "";
+      document.getElementById("orderWindowStart2").value = (slots[1] || {}).start || "";
+      document.getElementById("orderWindowEnd2").value   = (slots[1] || {}).end   || "";
+      document.getElementById("orderWindowZone").value = cfg.zone;
+      document.getElementById("orderWindowEnforced").checked = Boolean(cfg.enforced);
+      const slotsText = slots.map(s => `${s.start}-${s.end}`).join("、");
+      const badge = document.getElementById("orderWindowCurrent");
+      badge.textContent = cfg.enforced ? `目前：${slotsText}（已啟用）` : `目前：${slotsText}（未啟用）`;
+      badge.className = cfg.enforced
+        ? "text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"
+        : "text-sm px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200";
+    }
+
+    function saveOrderWindowSettings() {
+      const s1 = document.getElementById("orderWindowStart1").value;
+      const e1 = document.getElementById("orderWindowEnd1").value;
+      const s2 = document.getElementById("orderWindowStart2").value;
+      const e2 = document.getElementById("orderWindowEnd2").value;
+      const zone = document.getElementById("orderWindowZone").value.trim() || "Asia/Hong_Kong";
+      const enforced = document.getElementById("orderWindowEnforced").checked;
+      if (!s1 || !e1) { alert("時段一的開始與結束時間為必填。"); return; }
+      if (parseTimeToMinutes(s1) >= parseTimeToMinutes(e1)) { alert("時段一：結束時間必須晚於開始時間。"); return; }
+      if (s2 && e2 && parseTimeToMinutes(s2) >= parseTimeToMinutes(e2)) { alert("時段二：結束時間必須晚於開始時間。"); return; }
+      const slots = [{ start: s1, end: e1 }];
+      if (s2 && e2) slots.push({ start: s2, end: e2 });
+      saveOrderWindow({ slots, zone, enforced });
+      renderOrderWindowForm();
+      const slotsText = slots.map(s => `${s.start}-${s.end}`).join(" 及 ");
+      alert(`訂購時段已更新為 ${slotsText}（${enforced ? "已啟用" : "未啟用"}）。`);
+    }
+
+    function resetOrderWindowSettings() {
+      saveOrderWindow({ slots: [{ start: "11:00", end: "12:00" }, { start: "13:00", end: "14:30" }], zone: "Asia/Hong_Kong", enforced: true });
+      renderOrderWindowForm();
+      alert("已回復預設訂購時段：11:00-12:00 及 13:00-14:30（已啟用）。");
+    }
+
+    // ── 訂單管理：Dish 銷量（依日期分組）──────────────
+    async function renderSalesTable() {
+      const container = document.getElementById("salesReportContainer");
+      container.innerHTML = '<p class="px-1 py-6 text-center text-slate-400">載入中…</p>';
+      try {
+        const res = await fetch(`${ORDER_BASE}/orders`);
+        if (!res.ok) throw new Error(res.status);
+        const orders = await res.json();
+        if (!orders.length) {
+          container.innerHTML = '<p class="px-1 py-6 text-center text-slate-400">尚無訂單記錄</p>';
+          return;
+        }
+        const itemsResults = await Promise.all(
+          orders.map(o => fetch(`${ORDER_BASE}/orders/${o.orderId}/items`).then(r => r.json()).catch(() => []))
+        );
+        const byDate = {};
+        orders.forEach((o, idx) => {
+          const rawDate = o.createdAt ? o.createdAt.slice(0, 10) : "未知日期";
+          if (!byDate[rawDate]) byDate[rawDate] = {};
+          (itemsResults[idx] || []).forEach(item => {
+            const key = `mid-${item.menuId}`;
+            if (!byDate[rawDate][key]) byDate[rawDate][key] = { name: getMenuItemName(item.menuId), qty: 0, amount: 0 };
+            byDate[rawDate][key].qty += item.quantity;
+            byDate[rawDate][key].amount += Number(item.unitPrice) * item.quantity;
+          });
+        });
+        const blocks = Object.keys(byDate).sort((a, b) => b.localeCompare(a))
+          .map(date => {
+            const rows = Object.values(byDate[date]).sort((a, b) => b.qty - a.qty);
+            const totalQty = rows.reduce((s, r) => s + r.qty, 0);
+            const totalAmount = rows.reduce((s, r) => s + r.amount, 0).toFixed(0);
+            return { date, rows, totalQty, totalAmount };
+          }).filter(b => b.rows.length);
+        if (!blocks.length) {
+          container.innerHTML = '<p class="px-1 py-6 text-center text-slate-400">尚無銷售紀錄</p>';
+          return;
+        }
+        container.innerHTML = blocks.map(block => `
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">📅 ${block.date}</div>
+            <div class="overflow-x-auto">
+              <table class="present-table w-full text-sm">
+                <thead>
+                  <tr>
+                    <th class="text-left px-4 py-3">菜式／飲品</th>
+                    <th class="text-right px-4 py-3">售出份數</th>
+                    <th class="text-right px-4 py-3">銷量金額</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${block.rows.map(r => `
+                    <tr class="border-t">
+                      <td class="px-4 py-3">${r.name}</td>
+                      <td class="px-4 py-3 text-right">${r.qty}</td>
+                      <td class="px-4 py-3 text-right">$${r.amount.toFixed(0)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+                <tfoot>
+                  <tr class="border-t-2 border-slate-300 bg-slate-50 font-semibold text-slate-800">
+                    <td class="px-4 py-3">銷量總計</td>
+                    <td class="px-4 py-3 text-right">${block.totalQty}</td>
+                    <td class="px-4 py-3 text-right">$${block.totalAmount}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        `).join("");
+      } catch (e) {
+        container.innerHTML = '<p class="px-1 py-6 text-center text-slate-400">無法連線至 order-service (port 8084)</p>';
+      }
+    }
+
+    function refreshAdminDashboard() {
+      rehydrateMenuImagesFromStore(state);
+      renderAdminTables();
+      renderOrderWindowForm();
+      renderSalesTable();
+    }
+
+    window.addEventListener("canteen-store-updated", renderSalesTable);
+    window.addEventListener("storage", e => {
+      if (
+        e.key === CANTEEN_ORDERS_KEY ||
+        e.key === CANTEEN_STORE_KEY ||
+        e.key === CANTEEN_ORDER_WINDOW_KEY
+      ) {
+        renderSalesTable();
+        renderOrderWindowForm();
+      }
+    });
+
+    renderAdminTables();
+    renderOrderWindowForm();
+    renderSalesTable();
+
+    // ── 用戶充值管理 ──────────────────────────────────
+    let _walletId = null;
+
+    function showMsg(id, text, ok) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = `text-sm mt-1 ${ok ? "text-green-700" : "text-red-600"}`;
+      el.classList.remove("hidden");
+    }
+
+    async function lookupWallet() {
+      const phone = document.getElementById("rc-phone").value.trim();
+      if (!phone) { alert("請輸入電話號碼"); return; }
+      try {
+        const loginRes = await fetch(`${LOGIN_BASE}/api/users/lookup?phone=${encodeURIComponent(phone)}`);
+        if (!loginRes.ok) { const e = await loginRes.json().catch(() => ({})); alert("查詢用戶失敗：" + (e.message || loginRes.status)); return; }
+        const user = await loginRes.json();
+        const walletRes = await fetch(`${WALLET_BASE}/wallets/user/${user.userId}`);
+        if (!walletRes.ok) { alert("查詢錢包失敗：" + walletRes.status); return; }
+        const w = await walletRes.json();
+        _walletId = w.walletId;
+        document.getElementById("rc-userId").textContent = user.userId;
+        document.getElementById("rc-role").textContent = user.role;
+        document.getElementById("rc-walletId").textContent = w.walletId;
+        document.getElementById("rc-balance").textContent = `$${w.balance}`;
+        document.getElementById("rc-wallet-info").classList.remove("hidden");
+        document.getElementById("rc-msg").classList.add("hidden");
+      } catch (_) {
+        alert("無法連線至 login-service (port 8081) 或 wallet-service (port 8082)");
+      }
+    }
+
+    async function doRecharge() {
+      if (!_walletId) { alert("請先查詢錢包"); return; }
+      const amount = Number(document.getElementById("rc-amount").value);
+      const desc   = document.getElementById("rc-desc").value.trim() || "Admin 充值";
+      if (!amount || amount <= 0) { showMsg("rc-msg", "請輸入充值金額", false); return; }
+      try {
+        const res = await fetch(`${WALLET_BASE}/wallets/${_walletId}/recharge`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            adminId: 1,
+            amount,
+            description: desc,
+            idempotencyKey: `admin-recharge-${_walletId}-${Date.now()}`
+          })
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); showMsg("rc-msg", e.message || "充值失敗", false); return; }
+        const w = await res.json();
+        document.getElementById("rc-balance").textContent = `$${w.balance}`;
+        document.getElementById("rc-amount").value = "";
+        showMsg("rc-msg", `充值成功！新餘額：$${w.balance}`, true);
+      } catch (_) {
+        showMsg("rc-msg", "無法連線至 wallet-service (port 8082)", false);
+      }
+    }
+
+  </script>
+</body>
+</html>

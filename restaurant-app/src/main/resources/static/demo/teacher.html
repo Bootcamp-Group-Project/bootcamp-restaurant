@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEACHER Demo</title>
+  <link rel="stylesheet" href="/demo/common.css">
+</head>
+<body>
+  <a class="top-link" href="/demo-role-board.html">← 返回角色選擇</a>
+  <h1>TEACHER 頁面</h1>
+  <div class="card">
+    <p><strong>角色定位：</strong>與 STUDENT 相同，查看今日可訂資料並選擇 Dish / Drink。</p>
+    <p class="tip">使用 teacher/teacher123 帳號做 DEMO。此頁只做查看，不提供管理 API。</p>
+    <div class="row">
+      <button onclick="loadData('/api/dishes/today')">載入今日 Dishes</button>
+      <button onclick="loadData('/api/drinks/today')">載入今日 Drinks</button>
+      <button onclick="loadData('/api/menus/today')">載入今日 Menus</button>
+    </div>
+    <textarea id="output" readonly></textarea>
+  </div>
+  <script src="/demo/common.js"></script>
+  <script>
+    async function loadData(path) {
+      const out = document.getElementById("output");
+      try {
+        const auth = basicAuthHeader("teacher", "teacher123");
+        const data = await callApi(path, { headers: { Authorization: auth } });
+        printJson(out, data);
+      } catch (e) {
+        printJson(out, e.message);
+      }
+    }
+  </script>
+</body>
+</html>

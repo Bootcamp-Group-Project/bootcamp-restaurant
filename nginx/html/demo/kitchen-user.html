@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KITCHEN_USER Demo</title>
+  <link rel="stylesheet" href="/demo/common.css">
+</head>
+<body>
+  <a class="top-link" href="/demo-role-board.html">← 返回角色選擇</a>
+  <h1>KITCHEN_USER 頁面</h1>
+  <div class="card">
+    <p><strong>角色定位：</strong>管理 Dish 庫存（balance）。</p>
+    <div class="row">
+      <input id="dishId" type="number" placeholder="Dish ID" value="1">
+      <input id="balance" type="number" placeholder="New Balance" value="10">
+    </div>
+    <div class="row">
+      <button onclick="getBalance()">查詢 Balance</button>
+      <button onclick="updateBalance()">更新 Balance</button>
+    </div>
+    <p class="tip">使用 kitchen_user/kitchen123。更新後 status 會跟 balance 同步。</p>
+    <textarea id="output" readonly></textarea>
+  </div>
+  <script src="/demo/common.js"></script>
+  <script>
+    const auth = basicAuthHeader("kitchen_user", "kitchen123");
+
+    async function getBalance() {
+      const id = document.getElementById("dishId").value;
+      const out = document.getElementById("output");
+      try {
+        const data = await callApi(`/api/dishes/${id}/balance`, { headers: { Authorization: auth } });
+        printJson(out, data);
+      } catch (e) {
+        printJson(out, e.message);
+      }
+    }
+
+    async function updateBalance() {
+      const id = document.getElementById("dishId").value;
+      const balance = Number(document.getElementById("balance").value);
+      const out = document.getElementById("output");
+      try {
+        const data = await callApi(`/api/dishes/${id}/balance`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: auth },
+          body: JSON.stringify({ balance })
+        });
+        printJson(out, data);
+      } catch (e) {
+        printJson(out, e.message);
+      }
+    }
+  </script>
+</body>
+</html>

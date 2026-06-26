@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: restaurant-app
+  main:
+    lazy-initialization: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/restaurant_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 20000
+      idle-timeout: 300000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: ${PORT:8080}
+  tomcat:
+    threads:
+      max: 40
+      min-spare: 5
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY:}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_YOUR_KEY_HERE}
+  success-url: ${STRIPE_SUCCESS_URL:http://localhost/index.html?topup=success&session_id={CHECKOUT_SESSION_ID}}
+  cancel-url: ${STRIPE_CANCEL_URL:http://localhost/index.html?topup=cancel}
+  currency: hkd
+
+jwt:
+  secret: ${JWT_SECRET:canteen-default-secret-key-must-be-32-chars!}
+  expiration-ms: 86400000
+
+canteen:
+  order:
+    start: "11:00"
+    end: "14:30"
+    zone: "Asia/Hong_Kong"
+  scheduler:
+    daily-reset-cron: "0 0 0 * * *"
+
+r2:
+  access-key: ${R2_ACCESS_KEY:your_access_key}
+  secret-key: ${R2_SECRET_KEY:your_secret_key}
+  endpoint: ${R2_ENDPOINT:https://103c8d50d55f9c4635707fae11f3cc77.r2.cloudflarestorage.com}
+  bucket: ${R2_BUCKET:canteendb}
+  public-url: ${R2_PUBLIC_URL:https://pub-e47315ff76f145eeae9e5a2f8486bea8.r2.dev}
+
+security:
+  admin:
+    password: ${SECURITY_ADMIN_PASSWORD:admin123}
+  kitchen:
+    password: ${SECURITY_KITCHEN_PASSWORD:kitchen123}
+  student:
+    password: ${SECURITY_STUDENT_PASSWORD:student123}
+  teacher:
+    password: ${SECURITY_TEACHER_PASSWORD:teacher123}
+
+logging:
+  level:
+    root: WARN
+    com.restaurant: INFO

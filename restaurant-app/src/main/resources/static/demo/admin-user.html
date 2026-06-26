@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIN_USER Demo</title>
+  <link rel="stylesheet" href="/demo/common.css">
+</head>
+<body>
+  <a class="top-link" href="/demo-role-board.html">← 返回角色選擇</a>
+  <h1>ADMIN_USER 頁面</h1>
+  <div class="card">
+    <p><strong>角色定位：</strong>具完整管理權限（含 Kitchen 功能）。</p>
+    <div class="row">
+      <input id="dishId" type="number" placeholder="Dish ID" value="1">
+      <input id="dishName" placeholder="New Dish Name" value="Demo Dish Updated">
+      <input id="dishPrice" type="number" step="0.01" placeholder="New Price" value="52.0">
+    </div>
+    <div class="row">
+      <input id="balance" type="number" placeholder="New Balance" value="20">
+    </div>
+    <div class="row">
+      <button onclick="getBalance()">查詢 Balance</button>
+      <button onclick="updateBalance()">更新 Balance</button>
+      <button onclick="updateBasicInfo()">更新名稱/價格</button>
+    </div>
+    <p class="tip">使用 admin_user/admin123。圖片上傳 API 需搭配 multipart，這頁先示範核心管理功能。</p>
+    <textarea id="output" readonly></textarea>
+  </div>
+  <script src="/demo/common.js"></script>
+  <script>
+    const auth = basicAuthHeader("admin_user", "admin123");
+
+    async function getBalance() {
+      const id = document.getElementById("dishId").value;
+      const out = document.getElementById("output");
+      try {
+        const data = await callApi(`/api/dishes/${id}/balance`, { headers: { Authorization: auth } });
+        printJson(out, data);
+      } catch (e) {
+        printJson(out, e.message);
+      }
+    }
+
+    async function updateBalance() {
+      const id = document.getElementById("dishId").value;
+      const balance = Number(document.getElementById("balance").value);
+      const out = document.getElementById("output");
+      try {
+        const data = await callApi(`/api/dishes/${id}/balance`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: auth },
+          body: JSON.stringify({ balance })
+        });
+        printJson(out, data);
+      } catch (e) {
+        printJson(out, e.message);
+      }
+    }
+
+    async function updateBasicInfo() {
+      const id = document.getElementById("dishId").value;
+      const name = document.getElementById("dishName").value;
+      const price = Number(document.getElementById("dishPrice").value);
+      const out = document.getElementById("output");
+      try {
+        const data = await callApi(`/api/dishes/${id}/basic-info`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: auth },
+          body: JSON.stringify({ name, price })
+        });
+        printJson(out, data);
+      } catch (e) {
+        printJson(out, e.message);
+      }
+    }
+  </script>
+</body>
+</html>

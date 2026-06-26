@@ -1,0 +1,7 @@
+name = "canteen-chat"
+main = "index.js"
+compatibility_date = "2026-06-10"
+
+# Secrets — set via CLI:
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put JAVA_API_BASE

@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Dashboard - Canteen</title>
+  <link rel="stylesheet" href="/canteen-present.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { green: "#16a34a", orange: "#f97316" } }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="present-ui present-kitchen">
+
+  <!-- Kitchen Login Overlay -->
+  <div id="kitchenLoginOverlay" class="fixed inset-0 bg-slate-900/97 flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+      <div class="text-center mb-6">
+        <span class="text-4xl">👨‍🍳</span>
+        <h1 class="font-bold text-xl text-white mt-2">Kitchen Panel</h1>
+        <p class="text-sm text-slate-400">廚房後台登入</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">帳號</label>
+          <input id="loginKitchenUser" type="text" placeholder="kitchen_user"
+                 onkeydown="if(event.key==='Enter')document.getElementById('loginKitchenPass').focus()"
+                 class="w-full bg-slate-700 border border-slate-500 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">密碼</label>
+          <input id="loginKitchenPass" type="password" placeholder="••••••••"
+                 onkeydown="if(event.key==='Enter')kitchenLogin()"
+                 class="w-full bg-slate-700 border border-slate-500 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+        </div>
+        <p id="kitchenLoginErrMsg" class="text-red-400 text-sm hidden text-center"></p>
+        <button type="button" onclick="kitchenLogin()"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
+          登入廚房後台
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="kitchenMainContent" class="min-h-screen flex hidden">
+    <aside class="kitchen-sidebar w-56 shrink-0 hidden md:flex flex-col p-4">
+      <div class="flex items-center gap-2 mb-6 pb-4 border-b border-slate-600">
+        <span class="text-2xl">👨‍🍳</span>
+        <div>
+          <p class="font-bold text-emerald-400 text-sm">KITCHEN_USER</p>
+          <p class="text-xs text-slate-400">廚房後台</p>
+        </div>
+      </div>
+      <nav class="space-y-1 text-sm flex-1">
+        <a href="#" class="active">總覽</a>
+        <a href="#">訂單管理</a>
+        <a href="#">備貨確認</a>
+        <a href="#">菜單管理</a>
+        <a href="#">銷售報告</a>
+      </nav>
+      <div class="pt-4 border-t border-slate-600 text-sm space-y-2">
+        <a href="#" class="text-slate-400">設定</a>
+        <a href="#" class="text-slate-400">登出</a>
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="px-5 py-4 border-b border-slate-700 flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <h1 class="font-bold text-xl text-white">Kitchen 後台</h1>
+          <p class="text-xs text-slate-400">今日訂單 / 備貨 / 銷售報告</p>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-right">
+          <div>
+            <p class="text-emerald-400">系統狀態：正常 ●</p>
+            <p id="kitchenClock" class="text-slate-400 text-xs mt-1"></p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span id="kitchenTopbarUser" class="text-slate-300 text-xs">廚房用戶</span>
+            <button type="button" onclick="kitchenLogout()"
+                    class="px-3 py-1 rounded border border-slate-600 text-slate-400 hover:bg-red-900/50 hover:border-red-500 hover:text-red-400 transition-colors text-xs font-medium">
+              登出
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 p-5 space-y-5 max-w-7xl w-full mx-auto">
+        <section class="grid lg:grid-cols-3 gap-4">
+          <div class="kitchen-card lg:col-span-2">
+            <div class="p-4 border-b border-slate-600 flex justify-between items-center">
+              <h2 class="font-semibold">今日訂單列表</h2>
+              <button type="button" id="refreshOrdersBtn" class="present-btn-primary text-xs px-3 py-1.5">重新整理</button>
+            </div>
+            <div id="orderList" class="divide-y divide-slate-600"></div>
+            <p class="p-3 text-xs text-slate-500 text-right">查看全部訂單 ›</p>
+          </div>
+
+          <div class="kitchen-card">
+            <div class="p-4 border-b border-slate-600">
+              <h2 class="font-semibold">備貨量確認</h2>
+            </div>
+            <div id="stockList" class="p-4 space-y-2 text-sm"></div>
+          </div>
+        </section>
+
+        <section class="kitchen-card p-4">
+          <h2 class="font-semibold mb-4">今日銷售報告</h2>
+          <div id="salesReport" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div>
+        </section>
+
+        <section class="kitchen-card p-4">
+          <h2 class="font-semibold text-lg mb-4">核銷取餐</h2>
+          <div class="grid sm:grid-cols-2 gap-3 max-w-lg">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">取餐碼（如 0289-003）</label>
+              <input id="verify-code" type="text" placeholder="0289-003"
+                class="w-full bg-slate-700 border border-slate-500 rounded px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">取餐方式</label>
+              <select id="verify-method"
+                class="w-full bg-slate-700 border border-slate-500 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                <option value="SELF_PICKUP">自取</option>
+                <option value="DELIVERY">送餐</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" onclick="verifyPickup()"
+            class="present-btn-primary mt-3 px-5 py-2 text-sm">✅ 確認核銷</button>
+          <p id="verify-msg" class="mt-2 text-sm"></p>
+        </section>
+
+        <!-- 廚房 API 憑證設定 (hidden — login handled by overlay) -->
+        <section id="kitchenCredPanel" class="hidden kitchen-card p-4 border border-amber-500/40 bg-amber-900/20">
+          <h2 class="font-semibold text-sm text-amber-400 mb-2">🔐 廚房 API 憑證</h2>
+          <div class="flex flex-wrap gap-3 items-end">
+            <label class="block text-xs text-slate-400">帳號
+              <input id="kitchenUser" type="text" value="kitchen_user"
+                class="mt-1 bg-slate-700 border border-slate-500 rounded px-2 py-1.5 w-36 text-white text-sm" /></label>
+            <label class="block text-xs text-slate-400">密碼
+              <input id="kitchenPass" type="password" placeholder="kitchen123"
+                class="mt-1 bg-slate-700 border border-slate-500 rounded px-2 py-1.5 w-36 text-white text-sm" /></label>
+            <button type="button" onclick="setKitchenCredentials()"
+              class="present-btn-primary px-4 py-2 text-sm self-end">設定並載入菜單</button>
+          </div>
+        </section>
+
+        <section class="kitchen-card overflow-hidden">
+          <div class="p-4 border-b border-slate-600 flex flex-wrap justify-between items-center gap-3">
+            <h2 class="font-semibold text-lg">Dish 菜單管理（廚房：更新庫存／備注）</h2>
+            <button type="button" onclick="saveAllData()" class="present-btn-primary px-4 py-2 text-sm">💾 儲存庫存與備注</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="present-table w-full text-sm">
+              <thead>
+                <tr>
+                  <th class="text-left px-4 py-3">Dish（唯讀）</th>
+                  <th class="text-left px-4 py-3">庫存（可改）</th>
+                  <th class="text-left px-4 py-3">狀態</th>
+                  <th class="text-left px-4 py-3">Special Request（可改）</th>
+                </tr>
+              </thead>
+              <tbody id="dishTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/canteen-store.js"></script>
+  <script>
+    // ORDER_BASE, PICKUP_BASE, LOGIN_BASE already defined in canteen-store.js
+
+    const state = loadCanteenState();
+    let menuCache = {}; // "DISH_id" / "DRINK_id" → name, populated after API load
+
+    function dishStatusBadge(status) {
+      if (status === "SOLD_OUT") return '<span class="present-badge-sold">售罄</span>';
+      return '<span class="present-badge-supply">供應中</span>';
+    }
+
+    function updateKitchenClock() {
+      const el = document.getElementById("kitchenClock");
+      if (el) el.textContent = new Date().toLocaleString("zh-HK", { hour12: false });
+    }
+    updateKitchenClock();
+    setInterval(updateKitchenClock, 60000);
+
+    function parseOptions(value) {
+      return value.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    // ── 廚房 API 憑證 ─────────────────────────────────────
+    let kitchenUser = "", kitchenPass = "";
+
+    function kitchenHeaders(extra) {
+      const h = extra ? { ...extra } : {};
+      if (kitchenUser && kitchenPass) {
+        h["Authorization"] = "Basic " + btoa(kitchenUser + ":" + kitchenPass);
+      }
+      return h;
+    }
+
+    function setKitchenCredentials() {
+      const u = document.getElementById("kitchenUser").value.trim();
+      const p = document.getElementById("kitchenPass").value;
+      if (!u || !p) { alert("請填入帳號與密碼"); return; }
+      kitchenUser = u;
+      kitchenPass = p;
+      try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
+      document.getElementById("kitchenCredPanel").classList.add("hidden");
+      loadDishesFromApi();
+    }
+
+    async function kitchenLogin() {
+      const u = document.getElementById("loginKitchenUser").value.trim();
+      const p = document.getElementById("loginKitchenPass").value;
+      const errEl = document.getElementById("kitchenLoginErrMsg");
+      errEl.classList.add("hidden");
+      if (!u || !p) { errEl.textContent = "請填入帳號與密碼"; errEl.classList.remove("hidden"); return; }
+      try {
+        const res = await fetch("/api/menu/dishes", {
+          headers: { "Authorization": "Basic " + btoa(u + ":" + p) }
+        });
+        if (res.status === 401 || res.status === 403) {
+          errEl.textContent = "帳號或密碼錯誤";
+          errEl.classList.remove("hidden");
+          return;
+        }
+        kitchenUser = u;
+        kitchenPass = p;
+        try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
+        document.getElementById("kitchenTopbarUser").textContent = u;
+        document.getElementById("kitchenLoginOverlay").classList.add("hidden");
+        document.getElementById("kitchenMainContent").classList.remove("hidden");
+        loadDishesFromApi();
+        refreshKitchenDashboard();
+      } catch (_) {
+        errEl.textContent = "無法連線至伺服器，請稍後再試";
+        errEl.classList.remove("hidden");
+      }
+    }
+
+    function kitchenLogout() {
+      try { sessionStorage.removeItem("_ku"); sessionStorage.removeItem("_kp"); } catch (_) {}
+      kitchenUser = "";
+      kitchenPass = "";
+      document.getElementById("loginKitchenUser").value = "";
+      document.getElementById("loginKitchenPass").value = "";
+      document.getElementById("kitchenLoginErrMsg").classList.add("hidden");
+      document.getElementById("kitchenMainContent").classList.add("hidden");
+      document.getElementById("kitchenLoginOverlay").classList.remove("hidden");
+    }
+
+    async function loadDishesFromApi() {
+      try {
+        const [dishRes, drinkRes] = await Promise.all([
+          fetch("/api/dishes",  { headers: kitchenHeaders() }),
+          fetch("/api/drinks",  { headers: kitchenHeaders() })
+        ]);
+        menuCache = {};
+        if (dishRes.ok) {
+          const apiDishes = await dishRes.json();
+          state.dishes = apiDishes.map(d => ({
+            id: d.id,
+            name: d.name,
+            code: d.code || "",
+            price: Number(d.price) || 0,
+            balance: d.balance ?? 0,
+            status: d.status || "SOLD_OUT",
+            imageUrl: d.imageUrl || "",
+            image: d.imageUrl || "",
+            options: d.specialRequestOptions
+              ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
+              : []
+          }));
+          apiDishes.forEach(d => { menuCache[`DISH_${d.id}`] = d.name; });
+        }
+        if (drinkRes.ok) {
+          const apiDrinks = await drinkRes.json();
+          state.drinks = apiDrinks.map(d => ({
+            id: d.id, name: d.name, code: d.code || "",
+            price: Number(d.price) || 0, balance: d.balance ?? 0,
+            status: d.status || "SOLD_OUT", imageUrl: d.imageUrl || ""
+          }));
+          apiDrinks.forEach(d => { menuCache[`DRINK_${d.id}`] = d.name; });
+        }
+      } catch (e) {
+        console.warn("菜單 API 載入失敗", e);
+      }
+      renderKitchenDishTable();
+      renderStockList();
+    }
+
+    function renderKitchenDishTable() {
+      const dishBody = document.getElementById("dishTableBody");
+      if (!dishBody) return;
+      if (!state.dishes.length) {
+        dishBody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">請先設定廚房憑證以載入菜單</td></tr>';
+        return;
+      }
+      dishBody.innerHTML = state.dishes.map(d => `
+        <tr class="border-t">
+          <td class="px-4 py-3 text-slate-300 font-medium">${d.name}</td>
+          <td class="px-4 py-3"><input id="dish-balance-${d.id}" class="bg-slate-700 border border-slate-500 rounded px-2 py-1 w-20 text-white" type="number" min="0" value="${d.balance}" /></td>
+          <td class="px-4 py-3">${dishStatusBadge(d.status)}</td>
+          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="bg-slate-700 border border-slate-500 rounded px-2 py-1 w-56 text-white" value="${(d.options || []).join(", ")}" /></td>
+        </tr>
+      `).join("");
+    }
+
+    async function saveAllData() {
+      if (!kitchenUser) { alert("請先設定廚房帳號密碼"); return; }
+      const errors = [];
+      for (const d of state.dishes) {
+        const balEl = document.getElementById(`dish-balance-${d.id}`);
+        const optEl = document.getElementById(`dish-options-${d.id}`);
+        if (!balEl) continue;
+        const newBalance = Number(balEl.value) || 0;
+        const newOptions = optEl ? optEl.value.trim() : "";
+        try {
+          const r1 = await fetch(`/api/dishes/${d.id}/balance`, {
+            method: "PATCH",
+            headers: kitchenHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ balance: newBalance })
+          });
+          if (!r1.ok) errors.push(`Dish #${d.id} 庫存：HTTP ${r1.status}`);
+          if (newOptions) {
+            await fetch(`/api/dishes/${d.id}/special-request-options`, {
+              method: "PATCH",
+              headers: kitchenHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ specialRequestOptions: newOptions })
+            });
+          }
+        } catch (e) { errors.push(`Dish #${d.id}：${e.message}`); }
+      }
+      await loadDishesFromApi();
+      if (errors.length) {
+        alert("部分儲存失敗：\n" + errors.join("\n"));
+      } else {
+        alert("✅ 庫存與 Special Request 已更新至後端！");
+      }
+    }
+
+    function orderStatusBadge(status) {
+      const map = {
+        PENDING_PAY:  '<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300">待付款</span>',
+        DEPOSIT_PAID: '<span class="text-xs px-2 py-0.5 rounded bg-amber-900 text-amber-300">已付訂金・備餐中</span>',
+        FULLY_PAID:   '<span class="text-xs px-2 py-0.5 rounded bg-yellow-900 text-yellow-200">已全額付款・備餐中</span>',
+        COMPLETE:     '<span class="text-xs px-2 py-0.5 rounded bg-emerald-900 text-emerald-300">已完成出餐</span>',
+      };
+      return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">${status}</span>`;
+    }
+
+    function getMenuItemName(menuId, menuType, unitPrice) {
+      if (menuType) {
+        const key = `${menuType}_${menuId}`;
+        if (menuCache[key]) return menuCache[key];
+      }
+      // Old orders have no menuType. Use $0 price as signal it's a free drink.
+      const dishName  = menuCache[`DISH_${menuId}`];
+      const drinkName = menuCache[`DRINK_${menuId}`];
+      if (dishName && !drinkName) return dishName;
+      if (drinkName && !dishName) return drinkName;
+      if (dishName && drinkName) {
+        // ID collision — prefer drink if price is 0 (free drink), else prefer dish
+        return (Number(unitPrice) === 0) ? drinkName : dishName;
+      }
+      const d = state.dishes.find(x => x.id === menuId);
+      if (d) return d.name;
+      const dr = (state.drinks || []).find(x => x.id === menuId);
+      if (dr) return dr.name;
+      return `#${menuId}`;
+    }
+
+    function renderStockList() {
+      const el = document.getElementById("stockList");
+      if (!state.dishes.length) {
+        el.innerHTML = '<p class="text-sm text-slate-500">請先設定廚房憑證以載入庫存</p>';
+        return;
+      }
+      // Count ordered qty per dish from today's orders
+      const orderedQty = {};
+      todayOrders.forEach(o => (o.items || []).forEach(i => {
+        if (!i.menuType || i.menuType === "DISH") {
+          orderedQty[i.menuId] = (orderedQty[i.menuId] || 0) + (i.quantity || 1);
+        }
+      }));
+      el.innerHTML = state.dishes
+        .map(d => {
+          const original = Number(d.balance) || 0;
+          const ordered  = orderedQty[d.id] || 0;
+          const remaining = Math.max(0, original - ordered);
+          const soldOut = remaining <= 0 || d.status === "SOLD_OUT";
+          return `
+            <div class="flex justify-between text-sm border-b border-slate-600/50 pb-2 ${soldOut ? "text-red-400" : "text-slate-300"}">
+              <span>${d.name}</span>
+              <span>${ordered > 0 ? `已點 ${ordered} / ` : ""}尚餘 ${remaining} 份</span>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderSalesReport() {
+      const el = document.getElementById("salesReport");
+      if (!todayOrders.length) {
+        el.innerHTML = '<p class="text-sm text-slate-500 col-span-full">今日暫無訂單數據</p>';
+        return;
+      }
+      const total     = todayOrders.length;
+      const completed = todayOrders.filter(o => ["COMPLETE","READY","COMPLETED"].includes(o.orderStatus)).length;
+      const pending   = total - completed;
+      const revenue   = todayOrders.reduce((s, o) => s + Number(o.totalAmt || 0), 0);
+      const dishCount = {};
+      todayOrders.forEach(o => (o.items || []).forEach(i => {
+        const name = getMenuItemName(i.menuId, i.menuType, i.unitPrice);
+        dishCount[name] = (dishCount[name] || 0) + (i.quantity || 1);
+      }));
+      const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+      el.innerHTML = `
+        <div class="stat-card"><p>總單數</p><p>${total}</p></div>
+        <div class="stat-card"><p>已完成</p><p class="text-emerald-400">${completed}</p></div>
+        <div class="stat-card"><p>待處理</p><p class="text-orange-400">${pending}</p></div>
+        <div class="stat-card"><p>今日營業額</p><p>$${revenue}</p></div>
+        <div class="stat-card sm:col-span-2 lg:col-span-1"><p>最熱賣 Dish</p><p class="text-base">${topDish}</p></div>
+      `;
+    }
+
+    // Java LocalDateTime serializes as [yr,mo,day,hr,min,sec] or ISO string
+    function parseJavaDate(val) {
+      if (!val) return null;
+      if (Array.isArray(val)) {
+        const [yr, mo, day, hr = 0, min = 0, sec = 0] = val;
+        return new Date(yr, mo - 1, day, hr, min, sec);
+      }
+      const d = new Date(val);
+      return isNaN(d) ? null : d;
+    }
+
+    function fmtTime(val) {
+      const d = parseJavaDate(val);
+      if (!d) return "";
+      return d.toLocaleTimeString("zh-HK", { hour: "2-digit", minute: "2-digit", hour12: false });
+    }
+
+    // ── 今日訂單（純 API）──────────────────────────────────
+    let todayOrders = [];
+    let lastOrdersJson = "";
+    const expandedOrders = new Set(); // persist expand state across re-renders
+
+    function buildOrderRows(orders) {
+      if (!orders.length) return '<p class="p-6 text-sm text-slate-500 text-center">今日尚無訂單</p>';
+      return orders.map(o => {
+        const status     = o.orderStatus;
+        const active     = ["PENDING_PAY","DEPOSIT_PAID","FULLY_PAID"].includes(status);
+        const phoneLast4 = o.phone ? String(o.phone).slice(-4) : (o.userId ? String(o.userId % 10000).padStart(4, "0") : "GUST");
+        const orderLast3 = String(o.orderId % 1000).padStart(3, "0");
+        const pickupCode = `${phoneLast4}-${orderLast3}`;
+        const itemCount  = (o.items || []).reduce((s, i) => s + (i.quantity || 1), 0);
+        const isExpanded = expandedOrders.has(o.orderId);
+        const detailRows = (o.items || []).map(i => `
+          <tr class="border-t border-slate-700">
+            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId, i.menuType, i.unitPrice)}</td>
+            <td class="py-1.5 text-center text-slate-400 w-10">x${i.quantity || 1}</td>
+            <td class="py-1.5 text-right text-slate-400 w-16">$${Number(i.unitPrice || 0).toFixed(0)}</td>
+            <td class="py-1.5 pl-3 text-slate-500 text-xs">${i.specialNote || ""}</td>
+          </tr>`).join("");
+        return `
+          <div class="border-b border-slate-700 last:border-0">
+            <div class="p-4 flex flex-wrap gap-3 justify-between items-start hover:bg-slate-800/50 cursor-pointer select-none"
+                 onclick="toggleOrderDetail(${o.orderId}, this)">
+              <div class="space-y-1 flex-1 min-w-0">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <p class="font-medium text-white">訂單 #${o.orderId}</p>
+                  <span class="text-xs font-mono bg-slate-700 text-amber-300 px-2 py-0.5 rounded">取餐碼 ${pickupCode}</span>
+                  <span class="text-xs text-slate-500">${itemCount} 項 · $${o.totalAmt || 0}</span>
+                </div>
+                <p class="text-xs text-slate-400">用戶 #${o.userId} · ${fmtTime(o.createdAt)}</p>
+              </div>
+              <div class="flex flex-wrap gap-2 items-center" onclick="event.stopPropagation()">
+                ${orderStatusBadge(status)}
+                ${active ? `<button type="button" data-order-id="${o.orderId}" data-code="${pickupCode}"
+                  class="complete-btn present-btn-primary px-3 py-1.5 text-sm">✅ 出餐完成</button>` : ""}
+                <span class="text-slate-500 text-xs pointer-events-none chevron">${isExpanded ? "▲" : "▼"}</span>
+              </div>
+            </div>
+            <div id="order-detail-${o.orderId}" class="${isExpanded ? "" : "hidden"} px-4 pb-4 bg-slate-900/40">
+              <table class="w-full text-sm">
+                <thead><tr class="text-left text-xs text-slate-500 border-b border-slate-700">
+                  <th class="pb-1">項目</th><th class="pb-1 text-center w-10">數量</th>
+                  <th class="pb-1 text-right w-16">單價</th><th class="pb-1 pl-3">備注</th>
+                </tr></thead>
+                <tbody>${detailRows}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function toggleOrderDetail(orderId, headerEl) {
+      const panel = document.getElementById(`order-detail-${orderId}`);
+      if (!panel) return;
+      const open = expandedOrders.has(orderId);
+      if (open) {
+        expandedOrders.delete(orderId);
+        panel.classList.add("hidden");
+      } else {
+        expandedOrders.add(orderId);
+        panel.classList.remove("hidden");
+      }
+      const chevron = headerEl.querySelector(".chevron");
+      if (chevron) chevron.textContent = !open ? "▲" : "▼";
+    }
+
+    function bindCompleteButtons(el) {
+      el.querySelectorAll(".complete-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const orderId = Number(btn.dataset.orderId);
+          const pickupCode = btn.dataset.code;
+          btn.disabled = true;
+          btn.textContent = "處理中…";
+          try {
+            const res = await fetch(`${ORDER_BASE}/orders/${orderId}/status?status=COMPLETE`, { method: "PUT" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            await fetch(`${PICKUP_BASE}/api/pickups/ready?code=${encodeURIComponent(pickupCode)}`, { method: "PUT" });
+            lastOrdersJson = ""; // force re-render after status change
+            await renderOrderList();
+          } catch (e) {
+            alert("更新失敗：" + e.message);
+            btn.disabled = false;
+            btn.textContent = "✅ 出餐完成";
+          }
+        });
+      });
+    }
+
+    async function renderOrderList() {
+      const el = document.getElementById("orderList");
+      if (!lastOrdersJson) el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">載入中…</p>';
+      try {
+        const r = await fetch(`${ORDER_BASE}/orders/today`);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const orders = await r.json();
+        const sorted = orders.sort((a, b) => {
+          const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
+          return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
+        });
+        const newJson = JSON.stringify(sorted);
+        if (newJson === lastOrdersJson) return; // nothing changed — skip re-render
+        lastOrdersJson = newJson;
+        todayOrders = sorted;
+      } catch (e) {
+        todayOrders = [];
+        lastOrdersJson = "";
+        el.innerHTML = `<p class="p-6 text-sm text-red-400 text-center">訂單載入失敗：${e.message}</p>`;
+        return;
+      }
+      el.innerHTML = buildOrderRows(todayOrders);
+      bindCompleteButtons(el);
+    }
+
+    async function refreshKitchenDashboard() {
+      await loadDishesFromApi(); // keep menuCache up-to-date (picks up newly added dishes)
+      await renderOrderList();
+      renderStockList();
+      renderSalesReport();
+      renderKitchenDishTable();
+    }
+
+    document.getElementById("refreshOrdersBtn").addEventListener("click", refreshKitchenDashboard);
+
+    // 嘗試從 sessionStorage 還原憑證
+    try {
+      const su = sessionStorage.getItem("_ku");
+      const sp = sessionStorage.getItem("_kp");
+      if (su && sp) {
+        kitchenUser = su;
+        kitchenPass = sp;
+        document.getElementById("kitchenTopbarUser").textContent = su;
+        document.getElementById("kitchenLoginOverlay").classList.add("hidden");
+        document.getElementById("kitchenMainContent").classList.remove("hidden");
+        loadDishesFromApi();
+        refreshKitchenDashboard();
+      }
+    } catch (_) {}
+
+    refreshKitchenDashboard();
+    setInterval(refreshKitchenDashboard, 10000); // auto-refresh every 10 s
+
+    function resolvePickupCode(code) {
+      const parts = code.toUpperCase().split("-");
+      if (parts.length !== 2) return null;
+      const [phonePart, orderPart] = parts;
+      return todayOrders.find(o => {
+        const oPhone = o.phone ? String(o.phone).slice(-4) : String(o.userId % 10000).padStart(4, "0");
+        const oOrder = String(o.orderId % 1000).padStart(3, "0");
+        return oPhone === phonePart && oOrder === orderPart;
+      }) || null;
+    }
+
+    async function verifyPickup() {
+      const code   = document.getElementById("verify-code").value.trim();
+      const method = document.getElementById("verify-method").value;
+      const msg    = document.getElementById("verify-msg");
+
+      if (!code) { msg.textContent = "請輸入取餐碼"; msg.className = "mt-2 text-sm text-red-400"; return; }
+
+      const order = resolvePickupCode(code);
+
+      if (!order) {
+        msg.innerHTML = `<span class="text-red-400">找不到取餐碼 <b>${code}</b> 對應的訂單，請確認。</span>`;
+        msg.className = "mt-2 text-sm";
+        return;
+      }
+
+      const orderId   = order.orderId;
+      const itemSummary = (order.items || []).map(i => `${getMenuItemName(i.menuId, i.menuType, i.unitPrice)} x${i.quantity || 1}`).join("、") || "—";
+
+      const session = getSession();
+      const adminId = session ? session.userId : 0;
+      let successCount = 0;
+      for (const item of (order.items || [])) {
+        try {
+          const res = await fetch(`${PICKUP_BASE}/api/pickups/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemId: item.itemId, adminId, method })
+          });
+          if (res.ok) successCount++;
+        } catch (_) {}
+      }
+
+      if (successCount > 0) {
+        msg.innerHTML = `
+          <div class="bg-emerald-900/50 border border-emerald-700 rounded p-3 text-sm space-y-1">
+            <p class="font-semibold text-emerald-300">✅ 核銷成功（${successCount} 項）</p>
+            <p class="text-slate-300">訂單 #${orderId} · 用戶 #${order.userId} · $${order.totalAmt || 0}</p>
+            <p class="text-slate-400">${itemSummary}</p>
+          </div>`;
+        msg.className = "mt-2 text-sm";
+        document.getElementById("verify-code").value = "";
+        refreshKitchenDashboard();
+      } else {
+        msg.innerHTML = `<span class="text-red-400">核銷失敗，請稍後再試。</span>`;
+        msg.className = "mt-2 text-sm";
+      }
+    }
+  </script>
+</body>
+</html>

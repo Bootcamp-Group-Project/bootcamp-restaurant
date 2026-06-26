@@ -1,0 +1,19 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/restaurant_pos
+    username: postgres
+    password: 123456
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+stripe:
+  secret-key: sk_test_YOUR_KEY_HERE
+  success-url: http://localhost:8080/index.html?topup=success&session_id={CHECKOUT_SESSION_ID}
+  cancel-url: http://localhost:8080/index.html?topup=cancel
+  currency: twd

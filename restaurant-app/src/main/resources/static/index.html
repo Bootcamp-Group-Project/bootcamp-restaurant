@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canteen 午餐訂餐平台</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --lux-bg:           #FAFAF8;
+      --lux-surface:      #FFFFFF;
+      --lux-surface-dim:  #F2EFE9;
+      --lux-border:       #E8E4DE;
+      --lux-border-hover: #C4A882;
+      --lux-ink:          #1A1A1A;
+      --lux-ink-soft:     #3A3428;
+      --lux-muted:        #7A7168;
+      --lux-hint:         #B0A898;
+      --lux-gold:         #C4A882;
+      --lux-gold-dark:    #8B7355;
+      --lux-error:        #9B5A5A;
+      --lux-success:      #3A6B4A;
+      --lux-warn:         #8B6914;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--lux-bg);
+      color: var(--lux-ink);
+      min-height: 100vh;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    /* ── UTILITY ── */
+    .hidden  { display: none !important; }
+    .flex    { display: flex !important; }
+
+    /* ── HEADER ── */
+    .lux-header {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--lux-surface);
+      border-bottom: 1px solid var(--lux-border);
+    }
+    .lux-header-inner {
+      max-width: 1280px; margin: 0 auto;
+      padding: 12px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .lux-brand { display: flex; align-items: baseline; gap: 8px; }
+    .lux-brand-flanks { color: var(--lux-gold); font-size: 11px; letter-spacing: 1px; }
+    .lux-brand-name {
+      font-size: 13px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--lux-ink);
+    }
+    .lux-brand-subtitle {
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--lux-gold);
+    }
+    .lux-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .lux-arch-link {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--lux-muted); text-decoration: none;
+    }
+    .lux-arch-link:hover { color: var(--lux-gold-dark); }
+
+    /* ── BADGES ── */
+    .lux-badge {
+      display: inline-block; border-radius: 20px;
+      font-size: 10px; font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 3px 10px; border: 1px solid; white-space: nowrap;
+    }
+    .lux-badge-open     { border-color: var(--lux-gold);    color: var(--lux-gold-dark); }
+    .lux-badge-closed   { border-color: var(--lux-border);  color: var(--lux-hint); opacity: 0.7; }
+    .lux-badge-available{ border-color: var(--lux-success); color: var(--lux-success); }
+    .lux-badge-soldout  { border-color: var(--lux-error);   color: var(--lux-error); }
+    .lux-badge-role     { border-color: var(--lux-border);  color: var(--lux-muted); }
+    .lux-badge-warn     { border-color: var(--lux-warn);    color: var(--lux-warn); }
+    .lux-badge-paid     { border-color: var(--lux-gold);    color: var(--lux-gold-dark); }
+
+    /* ── BUTTONS ── */
+    .lux-btn-ink {
+      display: block; width: 100%;
+      background: var(--lux-ink); border: 1px solid var(--lux-ink); color: var(--lux-bg);
+      border-radius: 2px; font-size: 11px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 9px 16px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+    }
+    .lux-btn-ink:hover:not(:disabled) { opacity: 0.85; }
+    .lux-btn-ink:disabled { opacity: 0.45; cursor: not-allowed; }
+    .lux-btn-ghost {
+      display: block; width: 100%;
+      background: transparent; border: 1px solid var(--lux-border); color: var(--lux-ink);
+      border-radius: 2px; font-size: 11px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 9px 16px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+    }
+    .lux-btn-ghost:hover { border-color: var(--lux-gold); color: var(--lux-gold-dark); }
+    .lux-btn-gold {
+      display: block; width: 100%;
+      background: transparent; border: 1px solid var(--lux-gold); color: var(--lux-gold-dark);
+      border-radius: 2px; font-size: 11px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 9px 16px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+    }
+    .lux-btn-gold:hover { background: var(--lux-surface-dim); }
+    .lux-btn-inline { width: auto; display: inline-block; padding: 5px 14px; }
+
+    /* ── INPUTS ── */
+    .lux-input {
+      border: 1px solid var(--lux-border); border-radius: 2px;
+      padding: 8px 10px; font-family: 'DM Sans', sans-serif;
+      font-size: 12px; color: var(--lux-ink); background: var(--lux-surface);
+      outline: none; width: 100%;
+    }
+    .lux-input:focus { border-color: var(--lux-gold); }
+
+    /* ── HAIRLINES ── */
+    .lux-hairline             { height: 1px; background: var(--lux-border); }
+    .lux-hairline-gold-short  { width: 28px; height: 1px; background: var(--lux-gold); }
+    .lux-hairline-gold-center { width: 28px; height: 1px; background: var(--lux-gold); margin: 0 auto; }
+
+    /* ── LAYOUT ── */
+    .lux-main {
+      max-width: 1440px; margin: 0 auto;
+      padding: 36px 28px;
+      display: grid; grid-template-columns: 200px 1fr 320px; gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .lux-main { grid-template-columns: 1fr 320px; }
+      .lux-board-panel { display: none !important; }
+    }
+    @media (max-width: 900px) {
+      .lux-main { grid-template-columns: 1fr; }
+      .lux-sidebar { position: static; }
+    }
+
+    /* ── SECTION HEADER ── */
+    .lux-section-block { margin-bottom: 48px; }
+    .lux-section-header { margin-bottom: 20px; }
+    .lux-section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px; font-weight: 400; letter-spacing: 0.02em;
+      color: var(--lux-ink); margin: 8px 0 4px;
+    }
+    .lux-section-hint {
+      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--lux-muted);
+    }
+
+    /* ── MENU GRID ── */
+    .lux-menu-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    @media (max-width: 700px) { .lux-menu-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ── MENU CARD ── */
+    .lux-menu-card {
+      border: 1px solid var(--lux-border); border-radius: 4px;
+      background: var(--lux-surface); transition: border-color 0.2s ease; overflow: hidden;
+    }
+    .lux-menu-card:hover { border-color: var(--lux-gold); }
+    .lux-menu-card.lux-soldout { opacity: 0.55; }
+    .lux-card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+    .lux-card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .lux-category-label {
+      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--lux-gold-dark);
+    }
+    .lux-dish-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px; font-weight: 400; color: var(--lux-ink); line-height: 1.3;
+    }
+    .lux-price-stock { font-size: 13px; font-weight: 500; color: var(--lux-ink-soft); }
+    .lux-stock { font-size: 10px; font-weight: 400; letter-spacing: 0.5px; color: var(--lux-muted); }
+    .lux-options { display: flex; flex-direction: column; gap: 3px; max-height: 72px; overflow-y: auto; margin-top: 2px; }
+    .lux-option-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; color: var(--lux-muted);
+      background: var(--lux-surface-dim); border: 1px solid var(--lux-border);
+      border-radius: 2px; padding: 3px 6px; cursor: pointer;
+    }
+    .lux-add-btn { margin-top: 4px; }
+
+    /* ── SIDEBAR ── */
+    .lux-sidebar { position: sticky; top: 64px; }
+    .lux-sidebar-panel {
+      border: 1px solid var(--lux-border); border-radius: 4px; background: var(--lux-surface);
+    }
+    .lux-sidebar-section { padding: 20px; }
+    .lux-sidebar-label {
+      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--lux-muted); display: block; margin-bottom: 12px;
+    }
+    .lux-cart-count { font-size: 10px; letter-spacing: 1.5px; color: var(--lux-gold-dark); }
+    .lux-cart-items { display: flex; flex-direction: column; max-height: 220px; overflow-y: auto; }
+    .lux-cart-item { padding: 9px 0; border-bottom: 1px solid var(--lux-border); }
+    .lux-cart-item:last-child { border-bottom: none; }
+    .lux-cart-item-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .lux-cart-item-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px; font-weight: 400; color: var(--lux-ink);
+    }
+    .lux-cart-item-price { font-size: 12px; font-weight: 500; color: var(--lux-ink-soft); white-space: nowrap; }
+    .lux-cart-remove {
+      background: none; border: none; color: var(--lux-error);
+      font-size: 15px; cursor: pointer; line-height: 1; padding: 0 2px;
+    }
+    .lux-cart-item-note { font-size: 10px; color: var(--lux-muted); margin-top: 2px; }
+    .lux-empty-state {
+      font-size: 11px; color: var(--lux-hint); padding: 14px 0; text-align: center; letter-spacing: 0.5px;
+    }
+    .lux-subtotal-row {
+      display: flex; justify-content: space-between; align-items: center; padding-top: 12px;
+    }
+    .lux-subtotal-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lux-muted); }
+    .lux-subtotal-amount { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--lux-ink); }
+
+    /* ── STATUS BANNER ── */
+    .lux-status-banner {
+      border: 1px solid var(--lux-gold); background: var(--lux-surface-dim);
+      border-radius: 2px; padding: 10px 12px;
+      font-size: 11px; color: var(--lux-gold-dark); margin-bottom: 10px; letter-spacing: 0.3px;
+    }
+
+    /* ── MODAL ── */
+    .lux-modal-overlay {
+      position: fixed; inset: 0; background: rgba(26,26,26,0.52);
+      z-index: 50; align-items: center; justify-content: center; padding: 16px;
+    }
+    .lux-modal {
+      background: var(--lux-surface); border: 1px solid var(--lux-border);
+      border-radius: 4px; width: 100%; max-width: 480px;
+      max-height: 90vh; display: flex; flex-direction: column;
+    }
+    .lux-modal-lg { max-width: 600px; }
+    .lux-modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px 16px; border-bottom: 1px solid var(--lux-border); flex-shrink: 0;
+    }
+    .lux-modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px; font-weight: 400; color: var(--lux-ink);
+    }
+    .lux-modal-close {
+      background: none; border: none; font-size: 10px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--lux-muted); cursor: pointer;
+    }
+    .lux-modal-close:hover { color: var(--lux-ink); }
+    .lux-modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .lux-modal-footer {
+      padding: 16px 24px 20px; border-top: 1px solid var(--lux-border); flex-shrink: 0;
+    }
+
+    /* ── WALLET ── */
+    .lux-wallet-balance {
+      border: 1px solid var(--lux-gold); border-radius: 4px;
+      padding: 20px; background: var(--lux-surface-dim); margin-bottom: 16px;
+    }
+    .lux-wallet-balance-label {
+      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--lux-gold-dark); margin-bottom: 8px;
+    }
+    .lux-wallet-balance-amount {
+      font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 400; color: var(--lux-ink);
+    }
+    .lux-wallet-meta { font-size: 10px; color: var(--lux-muted); margin-top: 6px; letter-spacing: 0.5px; }
+    .lux-topup-section {
+      border: 1px solid var(--lux-border); border-radius: 2px; padding: 16px; margin-bottom: 16px;
+    }
+    .lux-topup-label {
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--lux-muted); margin-bottom: 10px; display: block;
+    }
+    .lux-topup-row { display: flex; gap: 8px; }
+    .lux-topup-note { font-size: 10px; color: var(--lux-hint); margin-top: 6px; letter-spacing: 0.3px; }
+
+    /* ── FOOTER ── */
+    .lux-footer {
+      border-top: 1px solid var(--lux-border); padding: 24px; text-align: center; margin-top: 20px;
+    }
+    .lux-footer p { font-size: 11px; letter-spacing: 0.8px; color: var(--lux-hint); }
+    .lux-footer a { color: var(--lux-gold-dark); text-decoration: none; }
+    .lux-footer a:hover { text-decoration: underline; }
+
+    /* ── CHAT WIDGET ── */
+    #chatBubble { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000; }
+    #chatToggle {
+      width: 48px; height: 48px; border-radius: 2px;
+      background: var(--lux-ink); color: var(--lux-bg);
+      border: none; font-size: 0.9rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.2s; letter-spacing: 1px;
+    }
+    #chatToggle:hover { opacity: 0.85; }
+    #chatPanel {
+      display: none; flex-direction: column;
+      width: 300px; height: 440px; background: var(--lux-surface);
+      border: 1px solid var(--lux-border); border-radius: 4px;
+      overflow: hidden; margin-bottom: 8px;
+    }
+    #chatPanel.open { display: flex; }
+    .chat-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid var(--lux-border); flex-shrink: 0;
+      background: var(--lux-surface);
+    }
+    .chat-header-text { flex: 1; }
+    .chat-header-name {
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--lux-ink); font-weight: 400;
+    }
+    .chat-header-status { font-size: 10px; color: var(--lux-success); margin-top: 1px; letter-spacing: 0.5px; }
+    #chatMessages {
+      flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .cb-user {
+      background: var(--lux-ink); color: var(--lux-bg);
+      border-radius: 2px 2px 0 2px;
+      padding: 8px 10px; max-width: 80%; align-self: flex-end;
+      font-size: 12px; line-height: 1.5; word-break: break-word;
+    }
+    .cb-bot {
+      background: var(--lux-surface-dim); color: var(--lux-ink);
+      border: 1px solid var(--lux-border);
+      border-radius: 2px 2px 2px 0;
+      padding: 8px 10px; max-width: 88%; align-self: flex-start;
+      font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+    }
+    .cb-bot strong { font-weight: 500; }
+    .chat-cmds {
+      display: flex; gap: 6px; padding: 8px 12px;
+      overflow-x: auto; border-top: 1px solid var(--lux-border); flex-shrink: 0;
+    }
+    .chat-cmd {
+      border: 1px solid var(--lux-border); border-radius: 2px; padding: 3px 9px;
+      font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--lux-muted); background: var(--lux-surface); cursor: pointer; white-space: nowrap;
+    }
+    .chat-cmd:hover { border-color: var(--lux-gold); color: var(--lux-gold-dark); }
+    .chat-input-row {
+      display: flex; gap: 6px; padding: 10px 12px;
+      border-top: 1px solid var(--lux-border); flex-shrink: 0;
+    }
+    #chatInput {
+      flex: 1; border: 1px solid var(--lux-border); border-radius: 2px;
+      padding: 6px 8px; font-size: 11px; outline: none; font-family: 'DM Sans', sans-serif;
+      color: var(--lux-ink); background: var(--lux-surface);
+    }
+    #chatInput:focus { border-color: var(--lux-gold); }
+    #chatSend {
+      padding: 6px 12px; background: var(--lux-ink); color: var(--lux-bg);
+      border: none; border-radius: 2px; font-size: 10px; letter-spacing: 1.5px;
+      text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+    }
+    #chatSend:disabled, #chatInput:disabled { opacity: 0.45; cursor: not-allowed; }
+    .cb-typing span {
+      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--lux-muted); margin: 0 1px; animation: cbBlink 1.2s infinite;
+    }
+    .cb-typing span:nth-child(2) { animation-delay: .2s; }
+    .cb-typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes cbBlink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+    /* ── ORDER BOARD PANEL (left) ── */
+    .lux-board-panel {
+      position: sticky; top: 64px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+      border: 1px solid var(--lux-border);
+      border-radius: 4px;
+      background: var(--lux-surface);
+      display: flex; flex-direction: column;
+    }
+    .board-section { padding: 16px 14px; }
+    .board-section + .board-section { border-top: 1px solid var(--lux-border); }
+    .board-section-title {
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 10px; color: var(--lux-muted);
+    }
+    .board-section-tiles { display: flex; flex-direction: column; gap: 6px; }
+    .board-tile {
+      border-radius: 2px; padding: 7px 8px; text-align: center;
+      font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+      border: 1px solid; transition: border-color 0.2s;
+    }
+    .board-section.preparing .board-tile {
+      color: var(--lux-warn); border-color: var(--lux-warn);
+      background: transparent;
+    }
+    .board-section.ready .board-tile {
+      color: var(--lux-success); border-color: var(--lux-success);
+      background: transparent;
+      animation: board-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes board-pulse {
+      0%,100% { opacity: 0.75; } 50% { opacity: 1; }
+    }
+    .board-none { font-size: 10px; color: var(--lux-hint); letter-spacing: 1px; padding: 2px 0; }
+  </style>
+</head>
+<body>
+
+<header class="lux-header">
+  <div class="lux-header-inner">
+    <div class="lux-brand">
+      <span class="lux-brand-flanks">——</span>
+      <span class="lux-brand-name">Canteen</span>
+      <span class="lux-brand-flanks">——</span>
+      <span class="lux-brand-subtitle">午餐訂餐平台</span>
+    </div>
+    <div class="lux-header-right">
+      <span id="periodBadge" class="lux-badge lux-badge-open">訂購時段</span>
+      <a href="/architecture.html" target="_blank" class="lux-arch-link" title="系統架構說明 v2">架構</a>
+
+      <!-- 未登入 -->
+      <span id="guestArea" style="display:flex;align-items:center;gap:8px;">
+        <span class="lux-badge lux-badge-role">訪客</span>
+        <button type="button" onclick="openLoginModal()" class="lux-btn-ghost lux-btn-inline">登入</button>
+        <button type="button" onclick="openRegisterModal()" class="lux-btn-ink lux-btn-inline">註冊</button>
+      </span>
+
+      <!-- 已登入 -->
+      <span id="loggedInArea" style="display:flex;align-items:center;gap:8px;" class="hidden">
+        <span id="userRoleBadge" class="lux-badge lux-badge-role"></span>
+        <span id="userDisplayName" style="font-size:12px;color:var(--lux-muted);letter-spacing:0.3px;"></span>
+        <button type="button" id="walletBtn" onclick="openWalletModal()"
+          class="hidden lux-badge lux-badge-open"
+          style="cursor:pointer;background:none;border:1px solid var(--lux-gold);">
+          $<span id="walletBalance">--</span>
+        </button>
+        <button type="button" onclick="logout()" class="lux-btn-ghost lux-btn-inline" style="font-size:10px;">登出</button>
+      </span>
+    </div>
+  </div>
+</header>
+
+<main class="lux-main">
+
+  <!-- Order Board Panel (left) -->
+  <aside class="lux-board-panel">
+    <div class="board-section preparing">
+      <div class="board-section-title">備餐中</div>
+      <div id="boardPreparing" class="board-section-tiles">
+        <span class="board-none">—</span>
+      </div>
+    </div>
+    <div class="board-section ready">
+      <div class="board-section-title">請取餐</div>
+      <div id="boardReady" class="board-section-tiles">
+        <span class="board-none">—</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Menu Section -->
+  <section>
+    <!-- Dishes -->
+    <div class="lux-section-block">
+      <div class="lux-section-header">
+        <div class="lux-hairline-gold-short"></div>
+        <h2 class="lux-section-title">精選主食</h2>
+        <p class="lux-section-hint">MAIN COURSE · Special Request Available</p>
+      </div>
+      <div id="dishList" class="lux-menu-grid"></div>
+    </div>
+
+    <!-- Drinks -->
+    <div class="lux-section-block">
+      <div class="lux-section-header">
+        <div class="lux-hairline-gold-short"></div>
+        <h2 class="lux-section-title">飲品選擇</h2>
+        <p class="lux-section-hint">BEVERAGE · 1 Free Drink Per Dish</p>
+      </div>
+      <div id="drinkList" class="lux-menu-grid"></div>
+    </div>
+  </section>
+
+  <!-- Sidebar -->
+  <aside class="lux-sidebar">
+    <div class="lux-sidebar-panel">
+
+      <!-- Cart -->
+      <div class="lux-sidebar-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span class="lux-sidebar-label" style="margin-bottom:0;">YOUR ORDER</span>
+          <span id="cartCount" class="lux-cart-count">0 件</span>
+        </div>
+        <div id="cartItems" class="lux-cart-items"></div>
+        <div class="lux-hairline" style="margin-top:12px;"></div>
+        <div class="lux-subtotal-row">
+          <span class="lux-subtotal-label">SUBTOTAL</span>
+          <span id="subtotal" class="lux-subtotal-amount">$0</span>
+        </div>
+        <button id="previewBtn" type="button" class="lux-btn-ink" style="margin-top:14px;">PREVIEW ORDER →</button>
+      </div>
+
+      <div class="lux-hairline"></div>
+
+      <!-- View All Orders -->
+      <div class="lux-sidebar-section" style="padding-top:16px;padding-bottom:16px;">
+        <button type="button" onclick="openAllOrdersModal()" class="lux-btn-ghost">VIEW ALL ORDERS</button>
+      </div>
+
+      <div class="lux-hairline"></div>
+
+      <!-- My Orders Today -->
+      <div class="lux-sidebar-section">
+        <span class="lux-sidebar-label">MY ORDERS TODAY</span>
+        <div id="orderStatusBanner" class="hidden lux-status-banner"></div>
+        <div id="myOrdersList"></div>
+        <button id="viewAllOrdersBtn" type="button" class="hidden lux-btn-ghost" style="margin-top:12px;">
+          VIEW ALL ORDERS →
+        </button>
+      </div>
+
+    </div>
+  </aside>
+</main>
+
+<footer class="lux-footer">
+  <p>如有任何問題，請聯絡飯堂職員。</p>
+  <p style="margin-top:4px;">© Canteen 午餐訂餐平台 版權所有 · <a href="#">私隱政策</a></p>
+</footer>
+
+<!-- All Orders Modal -->
+<div id="allOrdersModal" class="lux-modal-overlay hidden">
+  <div class="lux-modal lux-modal-lg" style="max-height:85vh;">
+    <div class="lux-modal-header">
+      <h4 class="lux-modal-title">我的全部訂單</h4>
+      <button type="button" id="closeAllOrdersModal" class="lux-modal-close">關閉</button>
+    </div>
+    <div id="allOrdersContent" class="lux-modal-body"></div>
+  </div>
+</div>
+
+<!-- Order Preview Modal -->
+<div id="previewModal" class="lux-modal-overlay hidden">
+  <div class="lux-modal lux-modal-lg">
+    <div class="lux-modal-header">
+      <h4 class="lux-modal-title">訂單預覽</h4>
+      <button id="closeModal" class="lux-modal-close">關閉</button>
+    </div>
+    <div id="previewContent" class="lux-modal-body"></div>
+    <div class="lux-modal-footer">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+        <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--lux-muted);">TOTAL</span>
+        <span id="previewTotal" style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--lux-ink);">$0</span>
+      </div>
+      <button id="submitOrderBtn" type="button" class="lux-btn-ink">CONFIRM ORDER</button>
+    </div>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="lux-modal-overlay hidden">
+  <div class="lux-modal">
+    <div class="lux-modal-header">
+      <h4 class="lux-modal-title">登入</h4>
+      <button type="button" onclick="closeLoginModal()" class="lux-modal-close">關閉</button>
+    </div>
+    <div class="lux-modal-body">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <input id="loginPhone" type="tel" placeholder="電話號碼" class="lux-input" />
+        <input id="loginPassword" type="password" placeholder="密碼" class="lux-input" />
+        <button type="button" onclick="doLogin()" class="lux-btn-ink" style="margin-top:4px;">LOGIN</button>
+        <p style="text-align:center;font-size:11px;color:var(--lux-muted);letter-spacing:0.5px;">還沒有帳號？
+          <button type="button" onclick="closeLoginModal(); openRegisterModal()"
+            style="background:none;border:none;color:var(--lux-gold-dark);cursor:pointer;font-size:11px;text-decoration:underline;padding:0;">立即註冊</button>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="lux-modal-overlay hidden">
+  <div class="lux-modal">
+    <div class="lux-modal-header">
+      <h4 class="lux-modal-title">註冊帳號</h4>
+      <button type="button" onclick="closeRegisterModal()" class="lux-modal-close">關閉</button>
+    </div>
+    <div class="lux-modal-body">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <input id="registerPhone" type="tel" placeholder="電話號碼" class="lux-input" />
+        <input id="registerPassword" type="password" placeholder="密碼" class="lux-input" />
+        <select id="registerRole" class="lux-input" onchange="updateSpecificIdHint()">
+          <option value="student">學生</option>
+          <option value="teacher">老師</option>
+        </select>
+        <input id="registerSpecificId" type="text" placeholder="學號（如 s12345678）" class="lux-input" />
+        <button type="button" onclick="doRegister()" class="lux-btn-ink" style="margin-top:4px;">REGISTER</button>
+        <p style="text-align:center;font-size:11px;color:var(--lux-muted);letter-spacing:0.5px;">已有帳號？
+          <button type="button" onclick="closeRegisterModal(); openLoginModal()"
+            style="background:none;border:none;color:var(--lux-gold-dark);cursor:pointer;font-size:11px;text-decoration:underline;padding:0;">立即登入</button>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Wallet Modal -->
+<div id="walletModal" class="lux-modal-overlay hidden">
+  <div class="lux-modal" style="max-width:420px;max-height:88vh;">
+    <div class="lux-modal-header">
+      <h4 class="lux-modal-title">我的錢包</h4>
+      <button type="button" onclick="closeWalletModal()" class="lux-modal-close">關閉</button>
+    </div>
+    <div class="lux-modal-body" style="overflow-y:auto;">
+      <div class="lux-wallet-balance">
+        <div class="lux-wallet-balance-label">目前餘額</div>
+        <div class="lux-wallet-balance-amount">$<span id="modalWalletBalance">--</span></div>
+        <div class="lux-wallet-meta">用戶 ID：<span id="modalUserId">--</span> · 錢包 ID：<span id="modalWalletId">--</span></div>
+      </div>
+      <div class="lux-topup-section">
+        <span class="lux-topup-label">STRIPE 充值</span>
+        <div class="lux-topup-row">
+          <input id="topupAmount" type="number" min="1" placeholder="充值金額（$）" class="lux-input" />
+          <button type="button" onclick="doTopup()" class="lux-btn-gold lux-btn-inline" style="white-space:nowrap;">前往付款</button>
+        </div>
+        <p class="lux-topup-note">安全由 Stripe 處理 · 測試卡號：4242 4242 4242 4242</p>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span class="lux-sidebar-label" style="margin-bottom:0;">TRANSACTIONS</span>
+          <button type="button" onclick="loadTransactions()"
+            style="background:none;border:none;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--lux-muted);cursor:pointer;">重新整理</button>
+        </div>
+        <div id="txList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/canteen-store.js"></script>
+<script>
+  let frontendRole = "student";
+  let dishes = [];
+  let drinks = [];
+  let menuFetched = false;
+
+  async function fetchMenuFromApi() {
+    try {
+      const [dishRes, drinkRes] = await Promise.all([
+        fetch("/api/dishes/today"),
+        fetch("/api/drinks/today")
+      ]);
+      if (dishRes.ok && drinkRes.ok) {
+        const apiDishes = await dishRes.json();
+        const apiDrinks  = await drinkRes.json();
+        dishes = apiDishes.map(d => ({
+          id: d.id, name: d.name, price: Number(d.price) || 0,
+          balance: d.balance ?? 0, status: d.status || "SOLD_OUT",
+          image: d.imageUrl || "", imageUrl: d.imageUrl || "",
+          options: d.specialRequestOptions
+            ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean) : []
+        }));
+        drinks = apiDrinks.map(d => ({
+          id: d.id, name: d.name, price: Number(d.price) || 0,
+          balance: d.balance ?? 0, status: d.status || "ON_LIST",
+          image: d.imageUrl || "", imageUrl: d.imageUrl || "",
+          options: d.specialRequestOptions
+            ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean) : []
+        }));
+        menuFetched = true;
+      } else if (dishRes.status === 403 || drinkRes.status === 403) {
+        dishes = []; drinks = []; menuFetched = false;
+      } else {
+        const published = loadFrontendMenu(frontendRole);
+        dishes = published.dishes; drinks = published.drinks; menuFetched = true;
+      }
+    } catch (_) {
+      const published = loadFrontendMenu(frontendRole);
+      dishes = published.dishes; drinks = published.drinks; menuFetched = true;
+    }
+    applyLocalStockOverrides();
+    renderDishes();
+    renderDrinks();
+  }
+
+  function applyLocalStockOverrides() {
+    const state = loadCanteenState();
+    if (!state || !state.dishes) return;
+    dishes.forEach(d => {
+      const local = state.dishes.find(x => x.id === d.id);
+      if (local != null && local.balance != null) {
+        d.balance = Number(local.balance);
+        d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT";
+      }
+    });
+  }
+
+  function reloadPublishedMenu() {
+    if (!menuFetched) { fetchMenuFromApi(); }
+    else { applyLocalStockOverrides(); renderDishes(); renderDrinks(); }
+  }
+
+  async function updateOrderWindowBadge() {
+    const badge = document.getElementById("periodBadge");
+    if (!badge) return;
+    let cfg;
+    try {
+      const res = await fetch("/api/menu/order-window");
+      if (res.ok) { cfg = await res.json(); saveOrderWindow(cfg); }
+    } catch (_) {}
+    if (!cfg) cfg = loadOrderWindow();
+    const open = !cfg.enforced || isOrderWindowOpen();
+    const validSlots = (cfg.slots || []).filter(s => s && s.start && s.end);
+    const slotsText = validSlots.length
+      ? validSlots.map(s => `${s.start}-${s.end}`).join("、")
+      : (cfg.start && cfg.end ? `${cfg.start}-${cfg.end}` : "");
+    if (!cfg.enforced) {
+      badge.textContent = `訂購時段 ${slotsText}`;
+    } else {
+      badge.textContent = open ? `訂購時段 ${slotsText}` : `訂購時段 ${slotsText}（休息中）`;
+    }
+    badge.classList.remove("lux-badge-open", "lux-badge-closed");
+    badge.classList.add(open ? "lux-badge-open" : "lux-badge-closed");
+  }
+
+  const cart = [];
+  const lastOrderStatusById = {};
+  const MY_ORDERS_PREVIEW_LIMIT = 3;
+
+  function formatOrderDate(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString("zh-HK", {
+        month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false
+      });
+    } catch (_) { return ""; }
+  }
+
+  function countOrderItems(items) { return (items || []).length; }
+
+  function myOrderStatusLabel(status) {
+    const map = {
+      "READY":        '<span class="lux-badge lux-badge-warn">未取餐</span>',
+      "COMPLETED":    '<span class="lux-badge lux-badge-warn">未取餐</span>',
+      "PICKED_UP":    '<span class="lux-badge lux-badge-available">已完成</span>',
+      "FULLY_PAID":   '<span class="lux-badge lux-badge-paid">已全額付款</span>',
+      "DEPOSIT_PAID": '<span class="lux-badge lux-badge-role">已付訂金</span>',
+      "PENDING":      '<span class="lux-badge lux-badge-role">待結算</span>',
+    };
+    return map[status] || '<span class="lux-badge lux-badge-role">處理中</span>';
+  }
+
+  function showOrderCompletedBanner(order) {
+    const banner = document.getElementById("orderStatusBanner");
+    const msg = order.statusMessage || "廚房已完成您的訂單，請取餐。謝謝﹗";
+    banner.textContent = `訂單 #${order.id}：${msg}`;
+    banner.classList.remove("hidden");
+  }
+
+  function renderOrderCardHtml(o, detailed) {
+    const dateStr = formatOrderDate(o.createdAt);
+    const itemCount = countOrderItems(o.items);
+    return `
+      <div style="border:1px solid var(--lux-border);border-radius:4px;padding:14px;margin-bottom:10px;background:var(--lux-surface);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div>
+            <span style="font-size:11px;letter-spacing:1px;color:var(--lux-ink-soft);">#${o.id}</span>
+            ${dateStr ? `<span style="font-size:10px;color:var(--lux-muted);margin-left:6px;">${dateStr}</span>` : ""}
+          </div>
+          ${myOrderStatusLabel(o.status)}
+        </div>
+        <p style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--lux-ink);margin:4px 0;">${formatOrderItemsSummary(o.items)}</p>
+        <p style="font-size:10px;color:var(--lux-muted);letter-spacing:0.3px;">${itemCount} 項 · $${o.total}</p>
+        ${["READY","COMPLETED","FULLY_PAID","DEPOSIT_PAID"].includes(o.status) ? (() => {
+          const _s = getSession();
+          const ph = o.phone ? o.phone.slice(-4) : o.userId ? String(o.userId % 10000).padStart(4,"0") : (_s && _s.phone ? _s.phone.slice(-4) : "????");
+          const ord = String((o.backendOrderId || o.id) % 1000).padStart(3,"0");
+          return `<p style="font-size:11px;color:var(--lux-ink-soft);margin-top:4px;">取餐碼：<span style="font-family:monospace;font-weight:500;letter-spacing:1px;color:var(--lux-ink);">${ph}-${ord}</span></p>`;
+        })() : ""}
+        ${
+          o.status === "PICKED_UP"
+            ? `<p style="margin-top:6px;font-size:11px;color:var(--lux-success);">已完成取餐，謝謝光臨！</p>`
+            : (o.status === "READY" || o.status === "COMPLETED")
+            ? `<p style="margin-top:6px;font-size:11px;color:var(--lux-warn);">${o.statusMessage || "廚房已完成您的訂單，請取餐。謝謝﹗"}</p>`
+            : o.status === "DEPOSIT_PAID"
+              ? '<p style="margin-top:6px;font-size:11px;color:var(--lux-gold-dark);">已付訂金，廚房處理中…</p>'
+              : o.status === "FULLY_PAID"
+                ? '<p style="margin-top:6px;font-size:11px;color:var(--lux-gold-dark);">已全額付款，廚房處理中…</p>'
+                : detailed ? '<p style="margin-top:6px;font-size:11px;color:var(--lux-warn);">尚未結算</p>' : ""
+        }
+        ${detailed && o.status === "PENDING"
+          ? `<button type="button" onclick="settleOrder(${o.id})"
+              style="margin-top:10px;width:100%;padding:9px;border-radius:2px;background:var(--lux-ink);color:var(--lux-bg);border:none;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+              結算付款
+             </button>`
+          : ""}
+      </div>
+    `;
+  }
+
+  function getMyOrders() { return getTodayOrdersForRole(frontendRole); }
+
+  function syncOrderCompletionNotifications(orders) {
+    orders.forEach(o => {
+      const prev = lastOrderStatusById[o.id];
+      if (prev && !["READY","COMPLETED","PICKED_UP"].includes(prev) && o.status === "READY") {
+        showOrderCompletedBanner(o);
+      }
+      lastOrderStatusById[o.id] = o.status;
+    });
+  }
+
+  function renderMyOrders() {
+    const el = document.getElementById("myOrdersList");
+    const btn = document.getElementById("viewAllOrdersBtn");
+    const orders = getMyOrders();
+    syncOrderCompletionNotifications(orders);
+    if (!orders.length) {
+      el.innerHTML = '<p style="font-size:11px;color:var(--lux-hint);padding:12px 0;text-align:center;letter-spacing:0.5px;">今日尚無訂單</p>';
+      if (btn) btn.classList.add("hidden");
+      return;
+    }
+    if (btn) btn.classList.remove("hidden");
+    const preview = orders.slice(0, MY_ORDERS_PREVIEW_LIMIT);
+    el.innerHTML = preview.map(o => renderOrderCardHtml(o, false)).join("");
+  }
+
+  function _mapBackendStatus(s) {
+    return { PENDING_PAY: "PENDING", DEPOSIT_PAID: "DEPOSIT_PAID",
+             FULLY_PAID: "FULLY_PAID", COMPLETE: "PICKED_UP" }[s] || s;
+  }
+
+  function _backendOrderToDisplay(o, session) {
+    return {
+      id: o.orderId, backendOrderId: o.orderId, createdAt: o.createdAt,
+      status: _mapBackendStatus(o.orderStatus), total: o.totalAmt,
+      items: [], phone: session ? session.phone : null, userId: o.userId
+    };
+  }
+
+  let _allOrdersJson = "";
+
+  async function _fetchAllOrders() {
+    const session = getSession();
+    if (!session) return loadOrders().sort((a, b) => b.id - a.id);
+    try {
+      const res = await fetch(`${ORDER_BASE}/orders/user/${session.userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.map(o => _backendOrderToDisplay(o, session))
+                   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+    } catch (_) {}
+    return loadOrders().sort((a, b) => b.id - a.id);
+  }
+
+  function _renderAllOrdersContent(orders) {
+    const content = document.getElementById("allOrdersContent");
+    if (!content) return;
+    content.innerHTML = orders.length
+      ? orders.map(o => renderOrderCardHtml(o, true)).join("")
+      : '<p style="font-size:12px;color:var(--lux-hint);text-align:center;padding:40px 0;letter-spacing:0.5px;">尚無訂單記錄</p>';
+  }
+
+  async function openAllOrdersModal() {
+    const modal = document.getElementById("allOrdersModal");
+    const content = document.getElementById("allOrdersContent");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    content.innerHTML = '<p style="font-size:11px;color:var(--lux-hint);text-align:center;padding:40px 0;letter-spacing:0.5px;">載入中…</p>';
+    _allOrdersJson = "";
+    const orders = await _fetchAllOrders();
+    const newJson = JSON.stringify(orders);
+    _allOrdersJson = newJson;
+    _renderAllOrdersContent(orders);
+  }
+
+  async function silentRefreshAllOrdersModal() {
+    const modal = document.getElementById("allOrdersModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    const orders = await _fetchAllOrders();
+    const newJson = JSON.stringify(orders);
+    if (newJson === _allOrdersJson) return;
+    _allOrdersJson = newJson;
+    _renderAllOrdersContent(orders);
+  }
+
+  function closeAllOrdersModal() {
+    const modal = document.getElementById("allOrdersModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+
+  document.getElementById("viewAllOrdersBtn").addEventListener("click", openAllOrdersModal);
+  document.getElementById("closeAllOrdersModal").addEventListener("click", closeAllOrdersModal);
+  document.getElementById("allOrdersModal").addEventListener("click", e => {
+    if (e.target.id === "allOrdersModal") closeAllOrdersModal();
+  });
+
+  function statusBadge(status) {
+    return status === "SOLD_OUT"
+      ? '<span class="lux-badge lux-badge-soldout">SOLD OUT</span>'
+      : '<span class="lux-badge lux-badge-available">AVAILABLE</span>';
+  }
+
+  let _lastDishesJson = "";
+  let _lastDrinksJson = "";
+
+  function renderDishes() {
+    const json = JSON.stringify(dishes);
+    if (json === _lastDishesJson) return;
+    _lastDishesJson = json;
+    const el = document.getElementById("dishList");
+    el.innerHTML = dishes.map(d => `
+      <div class="lux-menu-card ${d.status === "SOLD_OUT" ? "lux-soldout" : ""}">
+        <img src="${resolveItemImage(d)}" alt="${d.name}" class="lux-card-img" />
+        <div class="lux-hairline-gold-center"></div>
+        <div class="lux-card-body">
+          <div class="lux-category-label">MAIN COURSE</div>
+          <h3 class="lux-dish-name">${d.name}</h3>
+          <div style="margin:2px 0;">${statusBadge(d.status)}</div>
+          <p class="lux-price-stock">$${d.price} <span class="lux-stock">· ${d.balance} left</span></p>
+          ${(d.options || []).length ? `
+            <div class="lux-options">
+              ${d.options.map((o, idx) => `
+                <label class="lux-option-label">
+                  <input type="checkbox" style="flex-shrink:0;" data-dish-id="${d.id}" data-option="${o}" id="dish-${d.id}-opt-${idx}" />
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o}</span>
+                </label>`).join("")}
+            </div>` : ""}
+          <button type="button" ${d.status === "SOLD_OUT" ? "disabled" : ""} onclick="addToCart('dish', ${d.id})"
+            class="lux-btn-ink lux-add-btn">
+            ${d.status === "SOLD_OUT" ? "SOLD OUT" : "+ ADD"}
+          </button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderDrinks() {
+    const json = JSON.stringify(drinks);
+    if (json === _lastDrinksJson) return;
+    _lastDrinksJson = json;
+    const el = document.getElementById("drinkList");
+    el.innerHTML = drinks.map(d => `
+      <div class="lux-menu-card">
+        <img src="${resolveItemImage(d)}" alt="${d.name}" class="lux-card-img" />
+        <div class="lux-hairline-gold-center"></div>
+        <div class="lux-card-body">
+          <div class="lux-category-label">BEVERAGE</div>
+          <h3 class="lux-dish-name">${d.name}</h3>
+          <p class="lux-price-stock">$${d.price}</p>
+          ${(d.options || []).length ? `
+            <div class="lux-options">
+              ${d.options.map((o, idx) => `
+                <label class="lux-option-label">
+                  <input type="checkbox" style="flex-shrink:0;" data-drink-id="${d.id}" data-option="${o}" id="drink-${d.id}-opt-${idx}" />
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o}</span>
+                </label>`).join("")}
+            </div>` : ""}
+          <button type="button" onclick="addToCart('drink', ${d.id})" class="lux-btn-gold lux-add-btn">
+            + ADD
+          </button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function countDishInCart(dishId) {
+    return cart.filter(c => c.type === "dish" && c.id === dishId).length;
+  }
+
+  function addToCart(type, id) {
+    if (!assertOrderWindowOpen()) return;
+    const source = type === "dish" ? dishes : drinks;
+    const item = source.find(x => x.id === id);
+    if (!item || (type === "dish" && item.status === "SOLD_OUT")) return;
+    if (type === "dish") {
+      const inCart = countDishInCart(id);
+      if (inCart >= Number(item.balance)) {
+        alert(`「${item.name}」庫存不足（剩餘 ${item.balance} 份）。`);
+        return;
+      }
+    }
+    const selectedOptions = type === "dish"
+      ? Array.from(document.querySelectorAll(`input[type="checkbox"][data-dish-id="${id}"]:checked`)).map(el => el.dataset.option)
+      : Array.from(document.querySelectorAll(`input[type="checkbox"][data-drink-id="${id}"]:checked`)).map(el => el.dataset.option);
+    cart.push({ type, id: item.id, name: item.name, price: item.price, specialRequestOptions: selectedOptions });
+    renderCart();
+  }
+
+  function getCartLinePricing() {
+    let freeDrinkSlots = cart.filter(c => c.type === "dish").length;
+    return cart.map(c => {
+      if (c.type !== "drink") return { payable: c.price, original: c.price, isDrinkFree: false, isSingleDrink: false };
+      const isFree = freeDrinkSlots > 0;
+      if (isFree) freeDrinkSlots -= 1;
+      return { payable: isFree ? 0 : c.price, original: c.price, isDrinkFree: isFree, isSingleDrink: !isFree };
+    });
+  }
+
+  function formatLinePrice(line) {
+    if (line.isDrinkFree) {
+      return `<s style="color:var(--lux-muted);">$${line.original}</s> <span style="color:var(--lux-success);">$0</span>`;
+    }
+    if (line.isSingleDrink && line.original > 0) {
+      return `<span>$${line.payable}</span> <span style="font-size:9px;color:var(--lux-warn);letter-spacing:1px;text-transform:uppercase;">單點</span>`;
+    }
+    return `$${line.payable}`;
+  }
+
+  function calculateTotals() {
+    const dishItems  = cart.filter(c => c.type === "dish");
+    const drinkItems = cart.filter(c => c.type === "drink");
+    const dishCount  = dishItems.length;
+    const drinkCount = drinkItems.length;
+    const linePricing = getCartLinePricing();
+    const dishTotal  = dishItems.reduce((s, c) => s + c.price, 0);
+    const drinkOriginalTotal = drinkItems.reduce((s, c) => s + c.price, 0);
+    const drinkPayableTotal  = linePricing.filter((_, i) => cart[i].type === "drink").reduce((s, line) => s + line.payable, 0);
+    const drinkDiscount      = drinkOriginalTotal - drinkPayableTotal;
+    return {
+      dishCount, drinkCount,
+      freeDrinkCount: Math.min(dishCount, drinkCount),
+      paidDrinkCount: Math.max(0, drinkCount - dishCount),
+      dishTotal, drinkOriginalTotal, drinkPayableTotal, drinkDiscount,
+      total: dishTotal + drinkPayableTotal, linePricing
+    };
+  }
+
+  function renderCart() {
+    const el = document.getElementById("cartItems");
+    const totals = calculateTotals();
+    document.getElementById("subtotal").textContent = `$${totals.total}`;
+    document.getElementById("cartCount").textContent = `${cart.length} 件`;
+    el.innerHTML = cart.length
+      ? cart.map((c, i) => `
+        <div class="lux-cart-item">
+          <div class="lux-cart-item-row">
+            <span class="lux-cart-item-name">${c.name}</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="lux-cart-item-price">${formatLinePrice(totals.linePricing[i])}</span>
+              <button class="lux-cart-remove" onclick="removeItem(${i})">×</button>
+            </div>
+          </div>
+          ${c.specialRequestOptions && c.specialRequestOptions.length
+            ? `<div class="lux-cart-item-note">Special: ${c.specialRequestOptions.join(", ")}</div>`
+            : ""}
+        </div>`).join("")
+      : '<p class="lux-empty-state">尚未加入任何項目</p>';
+  }
+
+  function removeItem(index) { cart.splice(index, 1); renderCart(); }
+
+  const modal = document.getElementById("previewModal");
+  document.getElementById("previewBtn").addEventListener("click", () => {
+    const content = document.getElementById("previewContent");
+    const totals = calculateTotals();
+    content.innerHTML = cart.length
+      ? `${cart.map((c, i) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--lux-border);">
+            <span style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--lux-ink);">${c.name}${totals.linePricing[i].isSingleDrink ? "<span style='font-size:10px;color:var(--lux-muted);margin-left:4px;'>單點</span>" : ""}</span>
+            <span style="font-size:12px;font-weight:500;">${formatLinePrice(totals.linePricing[i])}</span>
+          </div>
+          ${c.specialRequestOptions && c.specialRequestOptions.length
+            ? `<div style="font-size:10px;color:var(--lux-muted);padding:3px 0 6px;letter-spacing:0.3px;">Special: ${c.specialRequestOptions.join(", ")}</div>`
+            : ""}`).join("")}
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--lux-border);">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lux-muted);">DRINK SUBTOTAL</span>
+            <span style="font-size:12px;color:var(--lux-ink-soft);">$${totals.drinkOriginalTotal}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--lux-muted);">搭配優惠（最多 ${totals.dishCount} 杯免費）</span>
+            <span style="font-size:12px;color:var(--lux-success);">-$${totals.drinkDiscount}</span>
+          </div>
+          ${totals.paidDrinkCount > 0
+            ? `<div style="font-size:10px;color:var(--lux-warn);padding:4px 0;">有 ${totals.paidDrinkCount} 杯飲品超過 Dish 數量，按單點計價</div>`
+            : ""}
+        </div>`
+      : '<p style="font-size:12px;color:var(--lux-hint);text-align:center;padding:32px 0;">購物車是空的</p>';
+    document.getElementById("previewTotal").textContent = `$${totals.total}`;
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  });
+  document.getElementById("closeModal").addEventListener("click", () => {
+    modal.classList.add("hidden"); modal.classList.remove("flex");
+  });
+
+  function closePreviewModal() { modal.classList.add("hidden"); modal.classList.remove("flex"); }
+
+  async function submitOrder() {
+    if (!assertOrderWindowOpen()) return;
+    if (!cart.length) { alert("購物車是空的，請先加入菜品或飲品。"); return; }
+    const session = getSession();
+    if (!session) { alert("請先登入後再下單。"); openLoginModal(); return; }
+
+    const storeState = loadCanteenState();
+    dishes.forEach(d => {
+      if (!storeState.dishes.find(x => x.id === d.id))
+        storeState.dishes.push({ id: d.id, name: d.name, balance: d.balance, status: d.status });
+    });
+    const stockCheck = validateOrderStock(storeState, cart);
+    if (!stockCheck.ok) { alert(stockCheck.message); reloadPublishedMenu(); return; }
+
+    const totals = calculateTotals();
+    const estimatedDeductAmt = cart.length >= 4 ? 50 : totals.total;
+
+    let wallet = _walletData;
+    if (!wallet) {
+      try {
+        const wr = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+        if (wr.ok) { wallet = await wr.json(); _walletData = wallet; _setBalanceDisplay(wallet.balance); }
+      } catch (_) {}
+    }
+    if (wallet && estimatedDeductAmt > 0 && Number(wallet.balance) < estimatedDeductAmt) {
+      alert(`餘額不足，無法下單。\n目前餘額：$${wallet.balance}\n需支付：$${estimatedDeductAmt}\n\n請先充值後再試。`);
+      return;
+    }
+
+    const linePrices = getOrderLinePricing(cart);
+    const grouped = new Map();
+    cart.forEach((item, idx) => {
+      const unitPrice = linePrices[idx];
+      const note = (item.specialRequestOptions || []).join(", ").slice(0, 200);
+      const menuType = item.type === "drink" ? "DRINK" : "DISH";
+      const key = `${item.id}__${note}__${unitPrice}__${menuType}`;
+      if (!grouped.has(key)) grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note, menuType });
+      grouped.get(key).quantity += 1;
+    });
+
+    try {
+      const orderRes = await fetch(`${ORDER_BASE}/orders`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: session.userId, phone: session.phone, items: [...grouped.values()] })
+      });
+      if (!orderRes.ok) {
+        const err = await orderRes.json().catch(() => ({}));
+        const msg = err.message || "";
+        alert(msg.toLowerCase().includes("insufficient")
+          ? `餘額不足，無法下單。\n需支付：$${estimatedDeductAmt}\n\n請先充值後再試。`
+          : "下單失敗：" + (msg || orderRes.status));
+        return;
+      }
+      const backendOrder = await orderRes.json();
+      try {
+        const wr2 = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+        if (wr2.ok) { _walletData = await wr2.json(); _setBalanceDisplay(_walletData.balance); }
+      } catch (_) {}
+      try {
+        appendOrder({
+          id: backendOrder.orderId, backendOrderId: backendOrder.orderId,
+          role: frontendRole, phone: session.phone, userId: session.userId,
+          createdAt: new Date().toISOString(), items: cart.map(c => ({ ...c })),
+          total: backendOrder.totalAmt, status: _mapBackendStatus(backendOrder.orderStatus),
+          paidAt: new Date().toISOString()
+        });
+      } catch (_) {}
+      deductStockForOrder(storeState, cart);
+      cart.filter(c => c.type === "dish").forEach(c => {
+        const d = dishes.find(x => x.id === c.id);
+        if (d) d.balance = Math.max(0, (d.balance || 0) - 1);
+      });
+      dishes.forEach(d => { d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT"; });
+      cart.length = 0;
+      reloadPublishedMenu(); renderCart(); closePreviewModal(); renderMyOrders();
+      const statusLabel = backendOrder.orderStatus === "DEPOSIT_PAID" ? "已付訂金 ($50)" : "已全額付款";
+      alert(`訂單已送出！\n訂單編號：#${backendOrder.orderId}\n總計：$${backendOrder.totalAmt}\n狀態：${statusLabel}\n感謝您的訂購，謝謝！`);
+    } catch (_) {
+      alert("下單時發生錯誤，請確認伺服器已啟動後再試。");
+    }
+  }
+
+  document.getElementById("submitOrderBtn").addEventListener("click", submitOrder);
+
+  function getOrderLinePricing(items) {
+    let freeDrinkSlots = items.filter(i => i.type === "dish").length;
+    return items.map(i => {
+      if (i.type !== "drink") return i.price;
+      const isFree = freeDrinkSlots > 0;
+      if (isFree) freeDrinkSlots -= 1;
+      return isFree ? 0 : i.price;
+    });
+  }
+
+  async function settleOrder(localOrderId) {
+    const session = getSession();
+    if (!session) { alert("請先登入後再進行結算。"); openLoginModal(); return; }
+    const orders = loadOrders();
+    const order = orders.find(o => o.id === localOrderId);
+    if (!order || order.status !== "PENDING") { alert("此訂單已結算或不存在。"); return; }
+    const items = order.items || [];
+    const linePrices = getOrderLinePricing(items);
+    const grouped = new Map();
+    items.forEach((item, idx) => {
+      const unitPrice = linePrices[idx];
+      const note = (item.specialRequestOptions || []).join(", ").slice(0, 200);
+      const menuType = item.type === "drink" ? "DRINK" : "DISH";
+      const key = `${item.id}__${note}__${unitPrice}__${menuType}`;
+      if (!grouped.has(key)) grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note, menuType });
+      grouped.get(key).quantity += 1;
+    });
+    const apiItems = [...grouped.values()];
+    try {
+      const orderRes = await fetch(`${ORDER_BASE}/orders`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: session.userId, items: apiItems })
+      });
+      if (!orderRes.ok) {
+        const err = await orderRes.json().catch(() => ({}));
+        alert("建立訂單失敗：" + (err.message || orderRes.status)); return;
+      }
+      const backendOrder = await orderRes.json();
+      const { orderId: backendOrderId, totalAmt, depositAmt } = backendOrder;
+      const walletRes = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+      if (!walletRes.ok) { alert("取得錢包失敗"); return; }
+      const wallet = await walletRes.json();
+      const { walletId, balance } = wallet;
+      const deductAmt = depositAmt > 0 ? depositAmt : totalAmt;
+      if (deductAmt <= 0) {
+        await fetch(`${ORDER_BASE}/orders/${backendOrderId}/status?status=FULLY_PAID`, { method: "PUT" });
+        markOrderPaid(orders, localOrderId, backendOrderId, "FULLY_PAID");
+        alert("結算完成（免費訂單）！"); renderMyOrders(); openAllOrdersModal(); return;
+      }
+      if (Number(balance) < deductAmt) {
+        alert(`餘額不足，無法結算。\n目前餘額：$${balance}\n需支付：$${deductAmt}\n\n請先充值後再試。`); return;
+      }
+      const deductRes = await fetch(`${WALLET_BASE}/wallets/${walletId}/deduct`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: session.userId, amount: deductAmt,
+          description: `訂單 #${backendOrderId} 付款`, idempotencyKey: `order-${backendOrderId}-pay` })
+      });
+      if (!deductRes.ok) {
+        const err = await deductRes.json().catch(() => ({}));
+        alert("扣款失敗：" + (err.message || deductRes.status)); return;
+      }
+      const updatedWallet = await deductRes.json();
+      const newStatus = depositAmt > 0 ? "DEPOSIT_PAID" : "FULLY_PAID";
+      await fetch(`${ORDER_BASE}/orders/${backendOrderId}/status?status=${newStatus}`, { method: "PUT" });
+      markOrderPaid(orders, localOrderId, backendOrderId, newStatus);
+      const statusLabel = newStatus === "DEPOSIT_PAID" ? "已付訂金 ($50)" : "已全額付款";
+      _walletData = { ..._walletData, balance: updatedWallet.balance };
+      _setBalanceDisplay(updatedWallet.balance);
+      alert(`結算成功！\n扣款：$${deductAmt}　剩餘餘額：$${updatedWallet.balance}\n訂單狀態：${statusLabel}`);
+      renderMyOrders(); openAllOrdersModal();
+    } catch (_) {
+      alert("結算時發生錯誤，請確認服務已啟動。");
+    }
+  }
+
+  function markOrderPaid(orders, localOrderId, backendOrderId, status) {
+    const idx = orders.findIndex(o => o.id === localOrderId);
+    if (idx !== -1) {
+      orders[idx].status = status; orders[idx].backendOrderId = backendOrderId;
+      orders[idx].paidAt = new Date().toISOString();
+    }
+    saveOrders(orders);
+  }
+
+  function refreshCustomerPage() {
+    reloadPublishedMenu(); renderMyOrders(); updateOrderWindowBadge(); silentRefreshAllOrdersModal();
+  }
+
+  // ── Wallet ──
+  let _walletData = null;
+
+  function _setBalanceDisplay(balance) {
+    const b = (balance != null) ? balance : "--";
+    ["walletBalance", "modalWalletBalance"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = b;
+    });
+  }
+
+  async function fetchWallet() {
+    const session = getSession();
+    if (!session) return;
+    try {
+      const res = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+      if (!res.ok) return;
+      _walletData = await res.json();
+      _setBalanceDisplay(_walletData.balance);
+      document.getElementById("walletBtn").classList.remove("hidden");
+    } catch (_) {}
+  }
+
+  function openWalletModal() {
+    const session = getSession();
+    if (!session) { openLoginModal(); return; }
+    document.getElementById("walletModal").classList.remove("hidden");
+    document.getElementById("walletModal").classList.add("flex");
+    document.getElementById("modalUserId").textContent = session.userId;
+    if (_walletData) {
+      document.getElementById("modalWalletId").textContent = _walletData.walletId;
+      _setBalanceDisplay(_walletData.balance);
+    }
+    _refreshWalletModal();
+  }
+
+  async function _refreshWalletModal() {
+    const session = getSession();
+    if (!session) return;
+    try {
+      const res = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+      if (!res.ok) return;
+      _walletData = await res.json();
+      _setBalanceDisplay(_walletData.balance);
+      document.getElementById("modalWalletId").textContent = _walletData.walletId;
+      await loadTransactions();
+    } catch (_) {}
+  }
+
+  function closeWalletModal() {
+    document.getElementById("walletModal").classList.add("hidden");
+    document.getElementById("walletModal").classList.remove("flex");
+  }
+
+  function _txLabel(type) {
+    return { RECHARGE: "管理員充值", DEDUCT: "訂單扣款", REFUND: "退款", STRIPE_TOPUP: "Stripe 充值" }[type] || type;
+  }
+  function _txColor(type) { return type === "DEDUCT" ? "color:var(--lux-error)" : "color:var(--lux-success)"; }
+  function _txSign(type)  { return type === "DEDUCT" ? "-" : "+"; }
+
+  async function loadTransactions() {
+    const el = document.getElementById("txList");
+    if (!el || !_walletData) return;
+    el.innerHTML = '<p style="font-size:11px;color:var(--lux-hint);text-align:center;padding:12px 0;letter-spacing:0.5px;">載入中…</p>';
+    try {
+      const res = await fetch(`${WALLET_BASE}/wallets/${_walletData.walletId}/transactions`);
+      if (!res.ok) { el.innerHTML = '<p style="font-size:11px;color:var(--lux-error);padding:8px 0;">載入失敗</p>'; return; }
+      const txs = await res.json();
+      if (!txs.length) { el.innerHTML = '<p style="font-size:11px;color:var(--lux-hint);text-align:center;padding:12px 0;letter-spacing:0.5px;">暫無交易紀錄</p>'; return; }
+      txs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      el.innerHTML = txs.map(tx => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--lux-border);">
+          <div>
+            <p style="font-size:12px;color:var(--lux-ink-soft);">${_txLabel(tx.type)}</p>
+            <p style="font-size:10px;color:var(--lux-muted);">${tx.description || ""}${tx.createdAt ? " · " + tx.createdAt.replace("T"," ").slice(0,16) : ""}</p>
+          </div>
+          <span style="font-size:13px;font-weight:500;margin-left:12px;flex-shrink:0;${_txColor(tx.type)}">${_txSign(tx.type)}$${tx.amount}</span>
+        </div>`).join("");
+    } catch (_) {
+      el.innerHTML = '<p style="font-size:11px;color:var(--lux-error);padding:8px 0;">無法連線至 wallet-service</p>';
+    }
+  }
+
+  async function doTopup() {
+    const session = getSession();
+    if (!session) { alert("請先登入"); return; }
+    if (!_walletData) { alert("錢包資料載入中，請稍後再試"); return; }
+    const amount = Number(document.getElementById("topupAmount").value);
+    if (!amount || amount <= 0) { alert("請輸入充值金額"); return; }
+    try {
+      const res = await fetch(`${WALLET_BASE}/wallets/${_walletData.walletId}/topup/create-session`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); alert("充值失敗：" + (e.message || res.status)); return; }
+      const data = await res.json();
+      localStorage.setItem("topupWalletId", String(_walletData.walletId));
+      window.location.href = data.sessionUrl;
+    } catch (_) {
+      alert("無法連線至 wallet-service，請確認服務已啟動。");
+    }
+  }
+
+  (function handleStripeReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("topup");
+    if (!status) return;
+    history.replaceState({}, "", window.location.pathname);
+    if (status === "cancel") { alert("充值已取消。"); return; }
+    if (status === "success") {
+      const sessionId = params.get("session_id");
+      const walletId  = localStorage.getItem("topupWalletId");
+      if (!sessionId || !walletId) return;
+      fetch(`${WALLET_BASE}/wallets/${walletId}/topup/verify?sessionId=${encodeURIComponent(sessionId)}`)
+        .then(r => r.json())
+        .then(data => {
+          fetchWallet();
+          if (data.status === "SUCCEEDED") { alert(`充值成功！新餘額：$${data.walletBalance}`); openWalletModal(); }
+        })
+        .catch(() => alert("充值驗證失敗，請聯絡管理員。"));
+    }
+  })();
+
+  // ── Auth ──
+  function updateAuthUI() {
+    const session = getSession();
+    const guestArea = document.getElementById("guestArea");
+    const loggedInArea = document.getElementById("loggedInArea");
+    if (session) {
+      guestArea.classList.add("hidden");
+      loggedInArea.classList.remove("hidden");
+      loggedInArea.classList.add("flex");
+      document.getElementById("userDisplayName").textContent = session.phone || session.role;
+      frontendRole = (session.role === "teacher") ? "teacher" : "student";
+      document.getElementById("userRoleBadge").textContent = frontendRole === "teacher" ? "TEACHER" : "STUDENT";
+      fetchWallet();
+    } else {
+      guestArea.classList.remove("hidden");
+      loggedInArea.classList.add("hidden");
+      loggedInArea.classList.remove("flex");
+      document.getElementById("userDisplayName").textContent = "";
+      _walletData = null;
+      _setBalanceDisplay(null);
+      document.getElementById("walletBtn").classList.add("hidden");
+    }
+  }
+
+  function openLoginModal() {
+    document.getElementById("loginModal").classList.remove("hidden");
+    document.getElementById("loginModal").classList.add("flex");
+  }
+  function closeLoginModal() {
+    document.getElementById("loginModal").classList.add("hidden");
+    document.getElementById("loginModal").classList.remove("flex");
+  }
+  function openRegisterModal() {
+    document.getElementById("registerModal").classList.remove("hidden");
+    document.getElementById("registerModal").classList.add("flex");
+  }
+  function closeRegisterModal() {
+    document.getElementById("registerModal").classList.add("hidden");
+    document.getElementById("registerModal").classList.remove("flex");
+  }
+  function updateSpecificIdHint() {
+    const role = document.getElementById("registerRole").value;
+    document.getElementById("registerSpecificId").placeholder =
+      role === "teacher" ? "教師編號（如 t12345678）" : "學號（如 s12345678）";
+  }
+
+  async function doLogin() {
+    const phone = document.getElementById("loginPhone").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    if (!phone || !password) { alert("請填寫電話與密碼"); return; }
+    try {
+      for (const role of ["student", "teacher"]) {
+        const res = await fetch(`${LOGIN_BASE}/login`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, password, role })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          saveSession({ userId: data.userId, role: data.role.toLowerCase(), phone: data.phone });
+          closeLoginModal(); updateAuthUI(); reloadPublishedMenu(); renderMyOrders(); return;
+        }
+      }
+      alert("登入失敗，請確認電話號碼與密碼。");
+    } catch (_) {
+      alert("無法連線至登入服務，請確認服務已啟動。");
+    }
+  }
+
+  async function doRegister() {
+    const phone = document.getElementById("registerPhone").value.trim();
+    const password = document.getElementById("registerPassword").value;
+    const role = document.getElementById("registerRole").value;
+    const specificId = document.getElementById("registerSpecificId").value.trim();
+    if (!phone || !password || !specificId) { alert("請填寫所有欄位"); return; }
+    try {
+      const res = await fetch(`${LOGIN_BASE}/register`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, password, role, specificId })
+      });
+      if (res.ok) { alert("註冊成功！請登入。"); closeRegisterModal(); openLoginModal(); }
+      else { const data = await res.json().catch(() => ({})); alert(data.message || "註冊失敗，電話號碼可能已被使用。"); }
+    } catch (_) {
+      alert("無法連線至登入服務，請確認服務已啟動。");
+    }
+  }
+
+  function logout() {
+    clearSession(); frontendRole = "student"; updateAuthUI(); reloadPublishedMenu(); renderMyOrders();
+  }
+
+  async function syncPickupStatus() {
+    const orders = loadOrders();
+    const pending = orders.filter(o => (o.status === "READY" || o.status === "COMPLETED") && o.backendOrderId);
+    if (!pending.length) return;
+    let changed = false;
+    for (const o of pending) {
+      try {
+        const itemsRes = await fetch(`${ORDER_BASE}/orders/${o.backendOrderId}/items`);
+        if (!itemsRes.ok) continue;
+        const items = await itemsRes.json();
+        if (!items.length) continue;
+        const pickupChecks = await Promise.all(
+          items.map(item =>
+            fetch(`${PICKUP_BASE}/api/pickups/item/${item.itemId}`)
+              .then(r => r.ok ? r.json() : null).catch(() => null)
+          )
+        );
+        if (pickupChecks.every(p => p && p.actualTime != null)) { o.status = "PICKED_UP"; changed = true; }
+      } catch (_) {}
+    }
+    if (changed) { saveOrders(orders); renderMyOrders(); }
+  }
+
+  // ── Order Board ──────────────────────────────────────
+  let _boardJson = "";
+
+  function _boardPickupCode(o) {
+    const ph = o.phone ? String(o.phone).slice(-4) : String(o.userId % 10000).padStart(4, "0");
+    return ph + "-" + String(o.orderId % 1000).padStart(3, "0");
+  }
+
+  function _renderBoardCol(id, orders) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = orders.length
+      ? orders.map(o => `<span class="board-tile">${_boardPickupCode(o)}</span>`).join("")
+      : '<span class="board-none">暫無訂單</span>';
+  }
+
+  async function refreshBoard() {
+    try {
+      const res = await fetch("/orders/today");
+      if (!res.ok) return;
+      const orders = await res.json();
+      const json = JSON.stringify(orders);
+      if (json === _boardJson) return;
+      _boardJson = json;
+      _renderBoardCol("boardPreparing", orders.filter(o => o.orderStatus === "DEPOSIT_PAID" || o.orderStatus === "FULLY_PAID"));
+      _renderBoardCol("boardReady",     orders.filter(o => o.orderStatus === "COMPLETE"));
+    } catch (_) {}
+  }
+
+  refreshBoard();
+  setInterval(refreshBoard, 20000);
+  // ─────────────────────────────────────────────────────
+
+  fetchMenuFromApi();
+  renderCart();
+  renderMyOrders();
+  updateAuthUI();
+  updateOrderWindowBadge();
+  syncPickupStatus();
+  setInterval(syncPickupStatus, 20000);
+  setInterval(updateOrderWindowBadge, 60000);
+  setInterval(fetchMenuFromApi, 5 * 60 * 1000);
+
+  window.addEventListener("canteen-store-updated", refreshCustomerPage);
+  window.addEventListener("storage", (e) => {
+    if ([CANTEEN_STORE_KEY, CANTEEN_IMAGE_STORE_KEY, CANTEEN_ORDERS_KEY, CANTEEN_ORDER_WINDOW_KEY].includes(e.key))
+      refreshCustomerPage();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") { refreshCustomerPage(); syncPickupStatus(); }
+  });
+</script>
+
+<!-- ── Chat Widget ── -->
+<div id="chatBubble">
+  <div id="chatPanel">
+    <div class="chat-header">
+      <div class="chat-header-text">
+        <div class="chat-header-name">—— Canteen 智能助理 ——</div>
+        <div class="chat-header-status">● 線上服務中</div>
+      </div>
+      <button onclick="toggleChat()" style="background:none;border:none;color:var(--lux-muted);font-size:14px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="chatMessages"></div>
+    <div class="chat-cmds">
+      <button class="chat-cmd" onclick="chatCmd('order')">訂單</button>
+      <button class="chat-cmd" onclick="chatCmd('contact')">聯絡</button>
+      <button class="chat-cmd" onclick="chatCmd('help')">幫助</button>
+      <button class="chat-cmd" onclick="chatCmd('feedback')">意見</button>
+    </div>
+    <div class="chat-input-row">
+      <input id="chatInput" type="text" placeholder="輸入訊息或取餐碼…" onkeydown="if(event.key==='Enter')chatSend()" />
+      <button id="chatSend" onclick="chatSend()">SEND</button>
+    </div>
+  </div>
+  <button id="chatToggle" onclick="toggleChat()" title="智能助理" style="font-size:11px;letter-spacing:1.5px;">CHAT</button>
+</div>
+
+<script>
+  const PICKUP_RE2 = /\b([0-9]{4})-([0-9]{3})\b/;
+  let chatOpen = false;
+  let chatAwaitCode = false;
+  let chatInited = false;
+
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    document.getElementById("chatPanel").classList.toggle("open", chatOpen);
+    document.getElementById("chatToggle").textContent = chatOpen ? "✕" : "CHAT";
+    if (chatOpen && !chatInited) {
+      chatInited = true;
+      chatAppend("bot", "你好！有什麼可以幫到你？\n可直接輸入**取餐碼**（如 0289-018）查詢狀態。");
+    }
+  }
+
+  function chatCmd(type) {
+    if (type === "order") {
+      chatAppend("user", "訂單狀況");
+      chatAppend("bot", "請輸入你的**取餐碼**（格式：XXXX-XXX，例如 0289-018）。");
+      chatAwaitCode = true;
+    } else if (type === "contact") {
+      chatAppend("user", "聯絡");
+      chatAppend("bot", "如需人工協助，請聯絡餐廳櫃檯或向廚房工作人員查詢。\n\n營業時間內歡迎直接前往詢問。");
+    } else if (type === "help") {
+      chatAppend("user", "幫助");
+      chatAppend("bot", "你可以：\n- 輸入**取餐碼**查詢餐點狀況\n- 點擊「訂單」查詢進度\n- 點擊「聯絡」取得聯絡資訊\n- 直接輸入問題，AI 為你解答");
+    } else if (type === "feedback") {
+      chatAppend("user", "提交意見");
+      showFeedbackForm();
+    }
+  }
+
+  function showFeedbackForm() {
+    if (document.getElementById("feedbackFormEl")) return;
+    const messages = document.getElementById("chatMessages");
+    const el = document.createElement("div");
+    el.className = "cb-bot"; el.id = "feedbackFormEl";
+    el.innerHTML = `
+      <p style="margin-bottom:6px;font-size:11px;letter-spacing:0.5px;">請輸入您的意見或建議：</p>
+      <textarea id="feedbackText" rows="3"
+        style="width:100%;border:1px solid var(--lux-border);border-radius:2px;padding:6px 8px;font-size:11px;resize:none;outline:none;font-family:'DM Sans',sans-serif;color:var(--lux-ink);background:var(--lux-surface);"
+        placeholder="例如：希望增加素食選項…"></textarea>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button onclick="submitFeedback()"
+          style="flex:1;background:var(--lux-ink);color:var(--lux-bg);border:none;border-radius:2px;padding:6px 0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">提交</button>
+        <button onclick="cancelFeedback()"
+          style="flex:1;background:var(--lux-surface-dim);color:var(--lux-muted);border:1px solid var(--lux-border);border-radius:2px;padding:6px 0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">取消</button>
+      </div>`;
+    messages.appendChild(el);
+    el.scrollIntoView({ behavior: "smooth", block: "end" });
+    setTimeout(() => document.getElementById("feedbackText")?.focus(), 100);
+  }
+
+  async function submitFeedback() {
+    const text = document.getElementById("feedbackText")?.value?.trim();
+    if (!text || text.length < 2) return;
+    document.getElementById("feedbackFormEl")?.remove();
+    const session = typeof getSession === "function" ? getSession() : null;
+    chatShowTyping();
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, userId: session?.userId ?? null, phone: session?.phone ?? null })
+      });
+      chatRemoveTyping();
+      chatAppend("bot", res.ok ? "已收到您的意見，感謝！管理員將稍後跟進回覆。" : "提交失敗，請稍後再試。");
+    } catch (_) { chatRemoveTyping(); chatAppend("bot", "連線異常，請稍後再試。"); }
+  }
+
+  function cancelFeedback() {
+    document.getElementById("feedbackFormEl")?.remove();
+    chatAppend("bot", "已取消。如有需要可隨時點擊「意見」。");
+  }
+
+  async function chatSend() {
+    const input = document.getElementById("chatInput");
+    const btn   = document.getElementById("chatSend");
+    const text  = input.value.trim();
+    if (text.length < 2) return;
+    input.disabled = btn.disabled = true;
+    input.value = "";
+    chatAppend("user", text);
+    try {
+      const match = text.match(PICKUP_RE2);
+      chatAwaitCode = false;
+      if (match) { await chatQueryPickup(`${match[1]}-${match[2]}`); }
+      else { await chatCallAI(text); }
+    } finally { input.disabled = btn.disabled = false; input.focus(); }
+  }
+
+  async function chatQueryPickup(code) {
+    chatShowTyping();
+    try {
+      const res = await fetch(`/api/pickups/status?code=${encodeURIComponent(code.toUpperCase())}`);
+      const data = res.ok ? await res.json() : null;
+      chatRemoveTyping();
+      if (!data || data.status === "NOT_FOUND") {
+        chatAppend("bot", `找不到取餐碼 **${code}**，請確認後再試。`);
+      } else if (data.status === "READY") {
+        chatAppend("bot", `取餐碼 **${data.code}** 餐點已完成！\n請前往取餐。${data.expectedTime ? "\n預計時間：" + data.expectedTime : ""}`);
+      } else {
+        chatAppend("bot", `取餐碼 **${data.code}** 製作中，請稍候。${data.expectedTime ? "\n預計時間：" + data.expectedTime : ""}`);
+      }
+    } catch (_) { chatRemoveTyping(); chatAppend("bot", "無法查詢，請稍後再試。"); }
+  }
+
+  async function chatCallAI(text) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30_000);
+    chatShowTyping();
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", text }] }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer); chatRemoveTyping();
+      if (!res.ok) {
+        if (res.status === 429) chatAppend("bot", "系統呼叫太頻繁，請等待 30 秒後再試。");
+        else if (res.status >= 500) chatAppend("bot", "伺服器目前忙碌中，請稍候再試。");
+        else chatAppend("bot", `請求失敗（HTTP ${res.status}），請稍後再試。`);
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      chatAppend("bot", data?.reply ?? "服務暫時無法回應，請稍後再試。");
+    } catch (err) {
+      clearTimeout(timer); chatRemoveTyping();
+      chatAppend("bot", err.name === "AbortError" ? "回應逾時，AI 目前忙碌，請稍後再試。" : "連線異常，請檢查網路連線。");
+    }
+  }
+
+  function chatAppend(role, text) {
+    const el = document.createElement("div");
+    el.className = role === "user" ? "cb-user" : "cb-bot";
+    const safe = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    el.innerHTML = role === "bot" ? safe.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>") : safe;
+    document.getElementById("chatMessages").appendChild(el);
+    el.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  function chatShowTyping() {
+    const el = document.createElement("div");
+    el.className = "cb-bot cb-typing"; el.id = "chatTyping";
+    el.innerHTML = "<span></span><span></span><span></span>";
+    document.getElementById("chatMessages").appendChild(el);
+    el.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  function chatRemoveTyping() { document.getElementById("chatTyping")?.remove(); }
+</script>
+</body>
+</html>

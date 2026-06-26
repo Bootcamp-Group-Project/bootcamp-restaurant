@@ -1,0 +1,9 @@
+name = "canteen-whatsapp"
+main = "index.js"
+compatibility_date = "2026-06-10"
+
+# Secrets are NOT stored here — set them via CLI:
+#   wrangler secret put JAVA_API_BASE
+#   wrangler secret put WHATSAPP_TOKEN
+#   wrangler secret put PHONE_NUMBER_ID
+#   wrangler secret put VERIFY_TOKEN

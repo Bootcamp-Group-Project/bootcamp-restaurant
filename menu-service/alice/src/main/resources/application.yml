@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: menu-service
+
+  main:
+    lazy-initialization: true
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/canteen_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 20000
+      idle-timeout: 300000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: ${PORT:8080}
+
+canteen:
+  order:
+    start: "11:00"
+    end: "14:30"
+    zone: "Asia/Hong_Kong"
+  scheduler:
+    daily-reset-cron: "0 0 0 * * *"
+  image:
+    upload-dir: ${IMAGE_UPLOAD_DIR:uploads/menu}
+    max-bytes: 5242880
+    min-pixel: 600
+    max-pixel: 800
+
+security:
+  admin:
+    password: ${SECURITY_ADMIN_PASSWORD:admin123}
+  kitchen:
+    password: ${SECURITY_KITCHEN_PASSWORD:kitchen123}
+  student:
+    password: ${SECURITY_STUDENT_PASSWORD:student123}
+  teacher:
+    password: ${SECURITY_TEACHER_PASSWORD:teacher123}
+
+logging:
+  level:
+    root: WARN
+    com.example.canteen: INFO

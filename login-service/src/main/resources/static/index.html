@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>午餐訂餐系統 - 入口</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; text-align: center; }
+        .btn { display: block; width: 100%; padding: 15px; margin: 15px 0; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; transition: 0.3s; color: white; }
+        .btn-login { background-color: #007bff; }
+        .btn-register { background-color: #28a745; }
+        
+        /* 角色選擇區 */
+        #registerRoles { display: none; margin-top: 20px; }
+        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .role-card { padding: 20px; border-radius: 10px; cursor: pointer; color: white; font-weight: bold; }
+        .bg-admin { background-color: #ffc107; color: black; }
+        .bg-kitchen { background-color: #28a745; }
+        .bg-student { background-color: #007bff; }
+        .bg-teacher { background-color: #d63384; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainEntry">
+    <h1>歡迎使用訂餐系統</h1>
+    <a href="login.html" class="btn btn-login">登入現有帳號</a>
+    <a href="change-password.html" class="btn" style="background-color:#0d6efd;">更改密碼</a>
+    <button class="btn btn-register" onclick="showRoles()">註冊新帳號</button>
+</div>
+
+<div class="container" id="registerRoles">
+    <h2>請選擇您的角色</h2>
+    <div class="role-grid">
+        <div class="role-card bg-admin" onclick="location.href='admin-register.html'">管理員</div>
+        <div class="role-card bg-kitchen" onclick="location.href='kitchen-register.html'">廚房廠商</div>
+        <div class="role-card bg-student" onclick="location.href='student-register.html'">學生</div>
+        <div class="role-card bg-teacher" onclick="location.href='teacher-register.html'">教師</div>
+    </div>
+    <button class="btn" style="background-color: #6c757d; margin-top: 20px;" onclick="location.reload()">返回</button>
+</div>
+
+<script>
+    function showRoles() {
+        document.getElementById('mainEntry').style.display = 'none';
+        document.getElementById('registerRoles').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

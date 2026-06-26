@@ -1,1 +1,8 @@
 .claude/
+CLAUDE.md
+
+# Maven build output
+target/
+*.jar
+*.war
+*.class

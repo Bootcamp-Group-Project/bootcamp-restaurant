@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>系統架構說明 v2 — Modular Monolith + Cloud + Cache</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Microsoft JhengHei", "微軟正黑體", "PingFang TC", Arial, sans-serif;
+    color: #1F2A37;
+    background: #F5F8FB;
+    margin: 0;
+    padding: 40px 20px;
+    line-height: 1.7;
+  }
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 56px 64px;
+    box-shadow: 0 10px 30px rgba(31, 78, 120, 0.08);
+    border-radius: 12px;
+  }
+  .header {
+    border-bottom: 3px solid #1F4E78;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  .badge {
+    display: inline-block;
+    background: #D9534F;
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  h1 { color: #1F4E78; font-size: 28px; margin: 0 0 6px; }
+  h2 {
+    color: #1F4E78;
+    font-size: 22px;
+    margin: 36px 0 12px;
+    border-left: 6px solid #1F4E78;
+    padding-left: 14px;
+  }
+  h3 { color: #2E74B5; font-size: 18px; margin: 22px 0 8px; }
+  .subtitle { color: #6B7280; font-size: 14px; }
+  p { font-size: 15px; margin: 8px 0 12px; }
+
+  .intro {
+    background: #FFF7E6;
+    border-left: 5px solid #F0AD4E;
+    padding: 14px 18px;
+    margin: 20px 0 28px;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+  .alert {
+    background: #FCE4E4;
+    border-left: 5px solid #B91C1C;
+    padding: 14px 18px;
+    margin: 18px 0;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+  .good {
+    background: #DCFCE7;
+    border-left: 5px solid #166534;
+    padding: 14px 18px;
+    margin: 18px 0;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+  .info {
+    background: #E8F4FD;
+    border-left: 5px solid #2E74B5;
+    padding: 14px 18px;
+    margin: 18px 0;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 14px;
+    background: #fff;
+    border: 1px solid #D9E1EC;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  thead th {
+    background: #1F4E78;
+    color: #fff;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-top: 1px solid #D9E1EC;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) td { background: #F5F8FB; }
+
+  code {
+    background: #EDF2F7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #D9534F;
+  }
+  pre {
+    background: #1F2A37;
+    color: #E4E8EE;
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+
+  /* 架構圖 */
+  .arch {
+    background: #F5F8FB;
+    border: 1px solid #D9E1EC;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 18px 0;
+  }
+  .layer { text-align: center; margin-bottom: 14px; }
+  .layer-title {
+    color: #6B7280;
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .fe-box {
+    display: inline-block;
+    background: #2E74B5;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 15px;
+  }
+  .gateway {
+    display: inline-block;
+    background: #F0AD4E;
+    color: #fff;
+    padding: 8px 22px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .jar-box {
+    border: 3px dashed #1F4E78;
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 8px 0;
+  }
+  .jar-label {
+    color: #1F4E78;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  .module-box {
+    background: #1F4E78;
+    color: #fff;
+    padding: 12px 4px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .module-box small {
+    display: block;
+    font-weight: normal;
+    opacity: 0.85;
+    margin-top: 3px;
+    font-size: 10px;
+  }
+  .cache-box {
+    background: #F0AD4E;
+    color: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 12px;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  .db-box {
+    background: #fff;
+    border: 2px dashed #6B7280;
+    color: #6B7280;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .cloud-box {
+    background: #6F42C1;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 13px;
+    margin-top: 8px;
+    display: inline-block;
+  }
+  .arrow {
+    text-align: center;
+    color: #6B7280;
+    font-size: 18px;
+    margin: 2px 0;
+  }
+
+  /* 對照表 */
+  .vs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .vs-col {
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .vs-bad {
+    background: #FCE4E4;
+    border: 1px solid #B91C1C40;
+  }
+  .vs-good {
+    background: #DCFCE7;
+    border: 1px solid #16653440;
+  }
+  .vs-col h4 {
+    margin: 0 0 8px;
+    font-size: 15px;
+  }
+  .vs-bad h4 { color: #B91C1C; }
+  .vs-good h4 { color: #166534; }
+  .vs-col ul { margin: 6px 0 0; padding-left: 20px; font-size: 13px; }
+  .vs-col li { margin-bottom: 4px; }
+
+  ul, ol { font-size: 15px; padding-left: 24px; }
+  li { margin-bottom: 4px; }
+
+  .footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #D9E1EC;
+    color: #6B7280;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  /* 進度條（記憶體用量） */
+  .mem-bar {
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    overflow: hidden;
+    margin: 8px 0 4px;
+    border: 1px solid #D9E1EC;
+  }
+  .mem-pg { background: #2E74B5; }
+  .mem-app { background: #1F4E78; }
+  .mem-nginx { background: #F0AD4E; }
+  .mem-os { background: #6B7280; }
+  .mem-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="header">
+    <div class="badge">ARCHITECTURE v2 · 實際實作</div>
+    <h1>系統架構說明 v2 — 從理想到現實</h1>
+    <div class="subtitle">校園餐廳 POS 系統 · Modular Monolith + Cloud + Cache · 2026-06-08</div>
+  </div>
+
+  <div class="alert">
+    <strong>⚠ v1 vs v2 的根本差異：</strong>
+    v1 提出 <strong>Microservice（5 個獨立 JAR、5 個 DB、各自部署）</strong> 的理想架構；
+    但受限於實際 <strong>2 GB RAM</strong> 的硬體配額，5 個 JVM 同時跑會直接 OOM。
+    v2 改為 <strong>Modular Monolith（1 JAR、1 JVM、5 個內部模組）</strong>，
+    保留模組邊界 + Caffeine 本地 Cache + Stripe 雲端金流，
+    達成「<strong>能跑、跑得起、未來能拆</strong>」。
+  </div>
+
+  <!-- ============== 一、為什麼變更 ============== -->
+  <h2>一、為什麼不能像 v1 那樣做？</h2>
+
+  <h3>1.1 硬體限制（這才是現實）</h3>
+  <p>整個系統部署在 <strong>2 GB RAM 的 EC2 主機</strong>，記憶體預算如下：</p>
+
+  <div class="mem-bar">
+    <div class="mem-seg mem-app" style="width:35%;">restaurant-app 700m</div>
+    <div class="mem-seg mem-nginx" style="width:3%;">N</div>
+    <div class="mem-seg mem-os" style="width:62%;">OS / 緩衝 1.25 GB</div>
+  </div>
+  <p style="color:#6B7280; font-size:13px;">圖示：2 GB 記憶體分配（應用程式 · Nginx · OS 緩衝）— PostgreSQL 已遷移至 Neon Cloud，釋出 400m</p>
+
+  <h3>1.2 如果硬要跑 5 個微服務會怎樣？</h3>
+  <table>
+    <thead>
+      <tr><th style="width:30%">項目</th><th style="width:24%">v1 微服務需求</th><th>v2 Modular Monolith 實況</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>JVM 數量</td>
+        <td>5 個</td>
+        <td>1 個</td>
+      </tr>
+      <tr>
+        <td>JVM 基本開銷</td>
+        <td>5 × 約 150–200m = <strong>750m–1 GB 純啟動</strong></td>
+        <td>1 × 約 150–200m = <strong>200m 純啟動</strong></td>
+      </tr>
+      <tr>
+        <td>實際可用堆積 (Heap)</td>
+        <td>每服務僅剩 <strong>~50m</strong> → 隨即 OOM</td>
+        <td>單一應用享有 <strong>-Xmx480m</strong>，舒適運作</td>
+      </tr>
+      <tr>
+        <td>Redis（v1 計畫的 cache）</td>
+        <td>另需 100–200m</td>
+        <td>❌ 不裝。改用 Caffeine in-JVM Cache（0 額外 RAM）</td>
+      </tr>
+      <tr>
+        <td>5 個獨立 DB</td>
+        <td>PostgreSQL 多實例 × 5 ≈ 2 GB</td>
+        <td>單一 <code>restaurant_db</code>，模組以表前綴隔離</td>
+      </tr>
+      <tr style="background:#FCE4E4;">
+        <td><strong>結論</strong></td>
+        <td><strong>2 GB 主機跑不起</strong>，需 8 GB+ 才舒適</td>
+        <td><strong>2 GB 剛好夠用</strong>，仍保留模組邊界</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 二、新架構 ============== -->
+  <h2>二、v2 實際架構</h2>
+
+  <div class="arch">
+    <div class="layer">
+      <div class="layer-title">FRONTEND</div>
+      <div class="fe-box">Alice 靜態 HTML + TailwindCSS（由 Nginx 直接託管）</div>
+    </div>
+
+    <div class="arrow">▼</div>
+
+    <div class="layer">
+      <div class="layer-title">NGINX 1.29（Port 80 · 交通警察）</div>
+      <div class="gateway">路徑剝離 · CORS · 靜態檔 · proxy_pass → restaurant-app:8080</div>
+    </div>
+
+    <div class="arrow">▼</div>
+
+    <div class="layer">
+      <div class="layer-title">SINGLE JAR — Spring Boot 3.4.5 / Java 21 / Port 8080</div>
+      <div class="jar-box">
+        <div class="jar-label">restaurant-app（單一 JVM，5 個內部模組）</div>
+        <div class="module-grid">
+          <div class="module-box">login<br><small>BCrypt + JWT</small></div>
+          <div class="module-box">wallet<br><small>Stripe 儲值</small></div>
+          <div class="module-box">menu<br><small>菜單 + 庫存</small></div>
+          <div class="module-box">order<br><small>訂單 + 訂金</small></div>
+          <div class="module-box">pickup<br><small>取餐 + WebSocket</small></div>
+        </div>
+        <div class="cache-box">⚡ Caffeine In-JVM Cache — 6 個快取池（menus / dishes / drinks · today / by-id）</div>
+      </div>
+    </div>
+
+    <div class="arrow">▼</div>
+
+    <div class="layer">
+      <div class="layer-title">DATA + CLOUD</div>
+      <div class="db-box">☁ Neon Serverless PostgreSQL — 單一資料庫 restaurant_db（模組以表前綴隔離）<br><small style="color:#9CA3AF;">Production: Neon Cloud &nbsp;|&nbsp; Local Dev: Docker postgres:18</small></div>
+      <div style="margin-top:10px;">
+        <span class="cloud-box">☁ Stripe Cloud API（金流、無需自建）</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== 三、四大關鍵取捨 ============== -->
+  <h2>三、四大關鍵取捨</h2>
+
+  <h3>3.1 微服務 → Modular Monolith</h3>
+  <div class="vs-grid">
+    <div class="vs-col vs-bad">
+      <h4>❌ v1：5 JAR 微服務</h4>
+      <ul>
+        <li>5 個獨立進程，2 GB 跑不動</li>
+        <li>跨服務需 Saga Pattern 處理一致性</li>
+        <li>5 套 CI/CD pipeline 開發成本高</li>
+        <li>本案 MVP 階段不需要極致彈性</li>
+      </ul>
+    </div>
+    <div class="vs-col vs-good">
+      <h4>✅ v2：1 JAR Modular Monolith</h4>
+      <ul>
+        <li>單一 JVM，700m RAM 內舒適運作</li>
+        <li>單一 DB transaction，自然一致</li>
+        <li>1 套 CI/CD，部署簡單</li>
+        <li><strong>模組邊界仍嚴格</strong>：未來資金到位可拆成微服務</li>
+      </ul>
+    </div>
+  </div>
+
+  <p><strong>關鍵設計：模組邊界仍守住。</strong>透過下列規範，未來要把單一模組「搬出去」成獨立微服務時，重構成本極低：</p>
+  <ul>
+    <li><strong>無跨模組 @Autowired</strong> — 不直接注入別模組的 Service。</li>
+    <li><strong>OpenFeign 自呼叫</strong> — 模組間以 HTTP 通訊（<code>@FeignClient(url = "http://127.0.0.1:8080")</code>），等同微服務通訊介面。</li>
+    <li><strong>跨模組 FK 只存 Long ID</strong> — 不用 <code>@ManyToOne</code> 跨模組指向，避免硬耦合。</li>
+    <li><strong>模組各自有 Controller / Service / Repository</strong> — 結構與微服務完全一致。</li>
+  </ul>
+
+  <h3>3.2 Redis → Caffeine（本地 In-JVM Cache）</h3>
+  <div class="vs-grid">
+    <div class="vs-col vs-bad">
+      <h4>❌ Redis</h4>
+      <ul>
+        <li>另需 100–200m RAM</li>
+        <li>需另開連線、處理序列化</li>
+        <li>網路 round-trip 反而慢</li>
+        <li>多一個服務要監控、要備份</li>
+      </ul>
+    </div>
+    <div class="vs-col vs-good">
+      <h4>✅ Caffeine（在 JVM 內）</h4>
+      <ul>
+        <li><strong>0 額外 RAM</strong>（用 -Xmx480m 內的空間）</li>
+        <li>純 Java 物件，無序列化成本</li>
+        <li>命中延遲 &lt; 1ms</li>
+        <li>Spring Cache 抽象，未來換 Redis 改設定即可</li>
+      </ul>
+    </div>
+  </div>
+
+  <p><strong>Caffeine 快取池清單（6 個）：</strong></p>
+  <table>
+    <thead>
+      <tr><th style="width:24%">快取名稱</th><th style="width:14%">TTL</th><th style="width:14%">max size</th><th>用途</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>menus-today</code></td><td>3 min</td><td>10</td><td>今日菜單 — 高頻讀取（午餐尖峰每秒上百次）</td></tr>
+      <tr><td><code>dishes-today</code></td><td>3 min</td><td>10</td><td>今日主菜清單</td></tr>
+      <tr><td><code>drinks-today</code></td><td>3 min</td><td>10</td><td>今日飲品清單</td></tr>
+      <tr><td><code>menu-by-id</code></td><td>10 min</td><td>200</td><td>單一菜單細節（瀏覽商品頁）</td></tr>
+      <tr><td><code>dish-by-id</code></td><td>10 min</td><td>200</td><td>單一主菜細節</td></tr>
+      <tr><td><code>drink-by-id</code></td><td>10 min</td><td>200</td><td>單一飲品細節</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info">
+    <strong>失效規則（Eviction）：</strong>所有寫入方法（<code>create / update / delete / updateBalance / uploadImage</code>）都帶 <code>@Caching(evict = {...})</code> 自動清除受影響快取；每日午夜 <code>DailyStockResetScheduler</code> 重置庫存時，6 個快取一次清空。
+  </div>
+
+  <h3>3.3 自建金流 → Stripe Cloud</h3>
+  <div class="vs-grid">
+    <div class="vs-col vs-bad">
+      <h4>❌ 自建金流 / Linepay 整合</h4>
+      <ul>
+        <li>需取得 PCI-DSS 合規</li>
+        <li>需處理信用卡資料儲存風險</li>
+        <li>整合工時長（2–3 週）</li>
+        <li>失敗風險高、退款流程複雜</li>
+      </ul>
+    </div>
+    <div class="vs-col vs-good">
+      <h4>✅ Stripe Cloud API</h4>
+      <ul>
+        <li>合規完全外包給 Stripe</li>
+        <li>3–5 天即可整合完成</li>
+        <li>支援 TWD 零小數位</li>
+        <li>Test card 可全流程驗證</li>
+        <li><strong>本機 0 額外 RAM</strong>（呼叫雲端 API）</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>Stripe Top-up 流程（Idempotent — 同一 session 重呼 verify 安全）：</p>
+  <pre>1. 前端 POST /wallets/{walletId}/topup/create-session  {amount}
+2. 後端建 StripeTopupRecord (PENDING)、回傳 sessionUrl
+3. 使用者導至 Stripe Checkout
+4. 付款後 Stripe 導回 success-url?session_id=xxx
+5. 前端 GET /wallets/{walletId}/topup/verify?sessionId=xxx
+6. 後端與 Stripe API 對帳、入賬 wallet、標記 SUCCEEDED
+7. 回 {status, walletBalance, message}</pre>
+
+  <h3>3.4 Server-side Cart → Frontend localStorage Cart（購物車設計）</h3>
+  <div class="vs-grid">
+    <div class="vs-col vs-bad">
+      <h4>⚠ Demo 方案：Server-side Cart（DB 持久化）</h4>
+      <ul>
+        <li>需建立 <code>carts</code> + <code>cart_items</code> 兩張新表</li>
+        <li>CartService 必須 Feign 呼叫 menu module 取得真實價格（Demo 原碼硬碼 $40，無法用）</li>
+        <li>deposit 計算有 bug：<code>finalTotal = baseTotal + depositAmt</code>（等於多收 $50）</li>
+        <li>認證改用 <code>X-User-Id</code> header，與現行 Spring Security HTTP Basic 不符</li>
+        <li>優點：換裝置 / 重開瀏覽器後仍可恢復購物車內容</li>
+      </ul>
+    </div>
+    <div class="vs-col vs-good">
+      <h4>✅ 現行方案：Frontend localStorage Cart</h4>
+      <ul>
+        <li>購物車存於瀏覽器 <code>localStorage</code>，<strong>0 個新 DB 表</strong></li>
+        <li>價格在結帳時由 menu API 即時取得，不硬碼</li>
+        <li><code>depositAmt</code> 正確語意：totalAmt 的<strong>先付部分</strong>，非額外加項</li>
+        <li>結帳時直接送 <code>POST /orders</code>，流程最短</li>
+        <li>校園 POS 單一餐期、當場結帳，無需跨裝置恢復</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>決策根據：</strong>
+    校園餐廳的使用場景是「坐下 → 點餐 → 當場結帳」，不存在「隔天繼續結帳」或「換手機繼續」的需求。
+    Server-side Cart 的唯一優勢（跨裝置 / 跨 session 恢復）在本場景中完全用不到，
+    反而帶來 2 張新表、Feign 跨模組取價、以及 Demo 原碼中兩個需修正的 bug（價格硬碼 + deposit 邏輯錯誤）。
+    現行 Frontend Cart 符合「<strong>夠用就好、不過度設計</strong>」的 MVP 原則。
+  </div>
+
+  <!-- ============== 四、雲端與本地的分工 ============== -->
+  <h2>四、雲端（Cloud）與本地（On-Premise）分工</h2>
+
+  <p>v2 的核心策略是：<strong>能交給雲端的事，就交給雲端做</strong>。本機只跑最關鍵的業務邏輯與資料庫，省下記憶體給 JVM。</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:28%">功能</th><th style="width:18%">放哪</th><th>理由</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>資料庫</td><td>☁ Neon Serverless</td><td>釋出 400m RAM；Zeabur 以環境變數注入連線字串；本機仍用 Docker postgres</td></tr>
+      <tr><td>金流付款</td><td>☁ Stripe Cloud</td><td>合規、安全、可靠性 99.99%，免維運</td></tr>
+      <tr><td>菜單圖片儲存</td><td>☁ Cloudflare R2</td><td>容器重啟圖片不滅失；免費方案足夠 MVP；image_url 直接存 public URL</td></tr>
+      <tr><td>使用者認證</td><td>本地 JWT + BCrypt</td><td>無第三方依賴，控管最大化</td></tr>
+      <tr><td>取餐通知</td><td>本地 WebSocket</td><td>低延遲、無需經外部服務</td></tr>
+      <tr><td>排程任務</td><td>本地 Spring Scheduler</td><td>每日庫存重置，量小無需 cloud job runner</td></tr>
+      <tr><td>反向代理</td><td>本地 Nginx 1.29</td><td>路徑剝離、CORS、靜態檔；輕量 50m RAM</td></tr>
+      <tr><td>監控 / 日誌（未來）</td><td>☁ CloudWatch / Sentry</td><td>不佔本機 RAM、可長期保存</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 五、新的記憶體預算 ============== -->
+  <h2>五、實際記憶體預算（2 GB EC2）</h2>
+
+  <table>
+    <thead>
+      <tr><th style="width:24%">元件</th><th style="width:14%">RAM</th><th>備註</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>☁ Neon Serverless PostgreSQL</td><td>0 MB</td><td>已遷移至 Neon Cloud，不佔 Zeabur 記憶體</td></tr>
+      <tr><td>restaurant-app (Spring Boot)</td><td>700 MB</td><td>JVM <code>-Xmx480m -Xms128m</code>；含 Caffeine cache</td></tr>
+      <tr><td>Nginx 1.29</td><td>~50 MB</td><td>反向代理 + 靜態檔</td></tr>
+      <tr><td>OS / Buffer / Cache</td><td>~1.25 GB</td><td>Linux 檔案快取、SSH、緩衝空間（較前增加 400m）</td></tr>
+      <tr style="background:#DCFCE7;"><td><strong>合計</strong></td><td><strong>~2 GB</strong></td><td>餘裕比原本多 400m，穩定性大幅提升</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 六、保留的微服務基因 ============== -->
+  <h2>六、保留的微服務基因</h2>
+
+  <p>雖然這次跑 1 個 JAR，但<strong>模組設計仍按微服務的標準</strong>，未來只要記憶體升級或業務分流即可逐一搬出：</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:24%">微服務原則</th><th>v2 對應作法</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>單一職責 (SRP)</td><td>每個模組獨立 package：<code>com.restaurant.login / wallet / menu / order / pickup</code></td></tr>
+      <tr><td>無共享資料庫</td><td>單一 DB，但<strong>無跨模組 JOIN</strong>，未來拆分時各模組可帶走自己的表</td></tr>
+      <tr><td>服務間通訊</td><td>OpenFeign HTTP 呼叫，未來改 URL 即可指向獨立服務</td></tr>
+      <tr><td>故障隔離</td><td>GlobalExceptionHandler 統一處理；單模組異常不影響其他模組</td></tr>
+      <tr><td>獨立部署</td><td>暫時共部署；模組內 controller 已具獨立 API 命名空間</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============== 七、未來升級路徑 ============== -->
+  <h2>七、未來升級路徑（Phase 5+）</h2>
+
+  <p>當以下任一條件成立時，再啟動「模組搬離」工程：</p>
+  <ul>
+    <li>單日訂單超過 <strong>5,000 筆</strong>，午餐尖峰 P95 延遲 &gt; 500ms</li>
+    <li>主機 RAM 升級至 <strong>8 GB+</strong>，或改為多機部署</li>
+    <li>Wallet 模組獲第三方校園採購意向，需獨立部署 / 銷售</li>
+    <li>金流流水超過月 NT$500 萬，PCI 稽核要求隔離</li>
+  </ul>
+
+  <table>
+    <thead>
+      <tr><th style="width:20%">搬出順序</th><th style="width:22%">候選模組</th><th>理由</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>第 1 順位</td><td><strong>wallet</strong></td><td>金流敏感、可獨立銷售予福利社 / 影印站；首先解耦最有商業價值</td></tr>
+      <tr><td>第 2 順位</td><td><strong>menu</strong></td><td>讀多寫少，可獨立 scale；圖片可同步搬至 CDN</td></tr>
+      <tr><td>第 3 順位</td><td><strong>pickup</strong></td><td>WebSocket 連線管理特殊，獨立後可改用 AWS API Gateway WebSocket</td></tr>
+      <tr><td>留在主體</td><td><strong>login / order</strong></td><td>業務核心，最後再考慮拆分</td></tr>
+    </tbody>
+  </table>
+
+  <p>同時將 Caffeine cache 替換為 Redis，並改用 SQS / EventBridge 做服務間非同步通訊。屆時架構即升級為「真正的微服務」。</p>
+
+  <!-- ============== 八、圖片儲存問題與 Cloudflare R2 解決方案 ============== -->
+  <h2>八、圖片儲存問題與 Cloudflare R2 解決方案</h2>
+
+  <h3>問題根源</h3>
+  <p>
+    原始設計將上傳圖片存放於容器本地檔案系統（<code>/app/uploads/menu/</code>），
+    並由 Spring Boot <code>WebConfig</code> 透過 <code>/uploads/**</code> 路徑對外提供服務。
+    在本機 Docker Compose 環境中，<code>uploads_data</code> named volume 可使圖片在容器重啟後保留。
+  </p>
+  <p>
+    然而在 <strong>Zeabur</strong> 雲端平台部署後，每次 git push 觸發重新部署時容器會被替換，
+    本地檔案系統全數清空。資料庫中的 <code>image_url</code> 欄位仍保留舊路徑（如
+    <code>/uploads/dish_af962598-....jpg</code>），但實際檔案已不存在，
+    瀏覽器請求時收到 HTTP 404，前端所有圖片空白。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:30%">情境</th><th>圖片是否存活</th><th>原因</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>本機 Docker Compose</td><td>✅ 存活</td><td><code>uploads_data</code> named volume 持久化</td></tr>
+      <tr><td>Zeabur 重新部署後</td><td>❌ 消失</td><td>容器替換，無持久 volume，檔案清零</td></tr>
+    </tbody>
+  </table>
+
+  <h3>解決方案：Cloudflare R2 外部儲存</h3>
+  <p>
+    放棄在容器內存圖，改用 <strong>Cloudflare R2</strong> Object Storage 作為圖片倉庫。
+    R2 免費方案（10 GB 儲存 / 月 100 萬次請求）對校園餐廳規模完全足夠。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:28%">步驟</th><th>做法</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1. 建立 R2 Bucket</td>
+        <td>Cloudflare Dashboard → R2 → 建立 bucket（例：<code>canteendb</code>）</td>
+      </tr>
+      <tr>
+        <td>2. 開啟公開存取</td>
+        <td>Bucket → Settings → Public Access → Allow Access，取得 <code>https://pub-xxx.r2.dev</code> base URL</td>
+      </tr>
+      <tr>
+        <td>3. 上傳圖片</td>
+        <td>手動上傳 <code>dish.jpg</code>、<code>drink.jpg</code> 至 R2 bucket</td>
+      </tr>
+      <tr>
+        <td>4. 更新資料庫</td>
+        <td>
+          在 PostgreSQL 執行：<br/>
+          <code>UPDATE dishes SET image_url = 'https://pub-xxx.r2.dev/dish.jpg';</code><br/>
+          <code>UPDATE drinks SET image_url = 'https://pub-xxx.r2.dev/drink.jpg';</code>
+        </td>
+      </tr>
+      <tr>
+        <td>5. 清除 Caffeine Cache</td>
+        <td>重啟 Zeabur 服務，或等待 3 分鐘讓 <code>dishes-today</code>/<code>drinks-today</code> cache TTL 到期</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    此方案的 <code>image_url</code> 欄位直接儲存完整的 HTTPS public URL（如
+    <code>https://pub-e47315ff76f145eeae9e5a2f8486bea8.r2.dev/dish.jpg</code>），
+    瀏覽器直接向 Cloudflare CDN 拉取圖片，Spring Boot 完全不參與圖片傳輸。
+    每次部署後圖片依然存活，無需重新上傳。
+  </p>
+
+  <div class="good">
+    <strong>架構決策：</strong>圖片不屬於「業務邏輯」，不應由應用伺服器負責儲存與傳輸。
+    外包給 Cloudflare R2 既節省容器 RAM，又獲得 CDN 加速與跨部署持久性。
+    這是「Right-sized Architecture」的體現：用最低成本解決最實際的問題。
+  </div>
+
+  <!-- ============== 九、結語 ============== -->
+  <h2>九、AI 智能客服聊天機器人</h2>
+
+  <p>v2 新增一個嵌入式 AI 聊天助理，讓顧客無需登入任何第三方平台即可查詢取餐狀況或諮詢問題。</p>
+
+  <h3>架構設計</h3>
+  <div class="info">
+    <strong>顧客瀏覽器</strong>（index.html 右下角 💬 浮動按鈕）<br>
+    &nbsp;&nbsp;↓ POST /api/chat { messages: [...] }<br>
+    <strong>Spring Boot — ChatController</strong>（com.restaurant.chat）<br>
+    &nbsp;&nbsp;↓ HTTPS + API Key（環境變數 GEMINI_API_KEY）<br>
+    <strong>Google Gemini API</strong>（gemini-flash-latest）<br>
+    &nbsp;&nbsp;↓ 回傳 { reply: "..." }<br>
+    <strong>顧客瀏覽器</strong> 顯示回覆
+  </div>
+
+  <h3>取餐碼查詢（本地處理，不經 AI）</h3>
+  <p>當訊息符合取餐碼格式（如 <code>0289-018</code>），前端直接呼叫 <code>GET /api/pickups/status?code=XXXX</code>，即時顯示狀態，<strong>無需呼叫 AI API</strong>，節省 token 用量。</p>
+
+  <h3>快捷指令（前端本地處理）</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0">
+    <thead><tr style="background:#E8F4FD"><th style="padding:8px;text-align:left;border:1px solid #ddd">指令</th><th style="padding:8px;text-align:left;border:1px solid #ddd">處理方式</th><th style="padding:8px;text-align:left;border:1px solid #ddd">說明</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:8px;border:1px solid #ddd">📋 訂單狀況</td><td style="padding:8px;border:1px solid #ddd">本地</td><td style="padding:8px;border:1px solid #ddd">引導輸入取餐碼</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd">📞 聯絡</td><td style="padding:8px;border:1px solid #ddd">本地</td><td style="padding:8px;border:1px solid #ddd">顯示聯絡資訊</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd">❓ 幫助</td><td style="padding:8px;border:1px solid #ddd">本地</td><td style="padding:8px;border:1px solid #ddd">顯示使用說明</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd">一般問題</td><td style="padding:8px;border:1px solid #ddd">Gemini AI</td><td style="padding:8px;border:1px solid #ddd">呼叫 /api/chat 由 AI 回覆</td></tr>
+    </tbody>
+  </table>
+
+  <h3>安全設計</h3>
+  <div class="good">
+    <strong>API Key 不暴露於前端</strong> — GEMINI_API_KEY 存放於 Zeabur 環境變數，Spring Boot 在伺服器端呼叫 Gemini API，瀏覽器只與自己的後端通訊（<code>/api/chat</code>），永不直接接觸 Google API。
+  </div>
+
+  <h2>十、結語：務實大於理想</h2>
+
+  <div class="good">
+    <strong>v2 的核心信念：</strong>
+    <strong>「Right-sized Architecture」</strong> — 在 2 GB 主機跑得起來的能跑、有資金升級時能搬離。
+    我們不為了「看起來像微服務」而把 5 個 JAR 硬塞進 2 GB；
+    我們選擇 <strong>Modular Monolith + Caffeine Cache + Stripe Cloud</strong>，
+    用最少資源達成最多功能，並把<strong>未來升級路徑</strong>事先鋪好。
+  </div>
+
+  <p>這份架構說明 v2 並非「降級」，而是「合身」。v1 的願景仍在；v2 是它的<strong>第一個可上線版本</strong>。</p>
+
+  <div class="footer">
+    校園餐廳 POS 系統 · 系統架構說明 v2 · 依 CLAUDE.md 實際實作 · 2026-06-13
+  </div>
+
+</div>
+
+</body>
+</html>

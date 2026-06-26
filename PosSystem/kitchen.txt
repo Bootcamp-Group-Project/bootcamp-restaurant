@@ -92,7 +92,7 @@ Drinks {
       Name        
       Price
       Picture
-      Category (走甜) 
+      Special_Request (走甜) 
 }
 
 Dishes {
@@ -100,7 +100,7 @@ Dishes {
       Name
       Price
       Picture
-      Category (少油)   
+      Special_Request (少油)   
 }
 
 Menus {

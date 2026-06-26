@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Campus Restaurant POS — Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+
+    header {
+      background: #1F4E78;
+      color: white;
+      padding: 24px 32px;
+    }
+    header h1 { font-size: 22px; margin-bottom: 4px; }
+    header p  { font-size: 13px; opacity: 0.75; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      padding: 28px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #888;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #ddd;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+      transform: translateY(-2px);
+    }
+
+    .card-icon { font-size: 28px; }
+    .card-title { font-size: 15px; font-weight: bold; color: #1F4E78; }
+    .card-desc  { font-size: 12px; color: #666; line-height: 1.5; }
+    .card-port  {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 11px;
+      background: #EFF6FF;
+      color: #1E40AF;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-weight: bold;
+      width: fit-content;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+      background: #ccc;
+    }
+    .dot.green  { background: #22c55e; }
+    .dot.blue   { background: #3b82f6; }
+    .dot.purple { background: #8b5cf6; }
+    .dot.orange { background: #f97316; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Campus Restaurant POS System</h1>
+  <p>Select a portal to open &nbsp;·&nbsp; All services must be running locally</p>
+</header>
+
+<div class="grid">
+
+  <!-- ── System 2: Menu (Alice) ── -->
+  <div class="section-label">
+    <span class="dot green"></span>System 2 — Menu Service (Alice) &nbsp;·&nbsp; port 8080
+  </div>
+
+  <a class="card" href="http://localhost:8080/index.html" target="_blank">
+    <div class="card-icon">🍱</div>
+    <div class="card-title">Student Ordering</div>
+    <div class="card-desc">Browse the menu and place orders as a student.</div>
+    <span class="card-port">:8080 / index.html</span>
+  </a>
+
+  <a class="card" href="http://localhost:8080/admin.html" target="_blank">
+    <div class="card-icon">⚙️</div>
+    <div class="card-title">Admin — Menu Management</div>
+    <div class="card-desc">Add, edit, and remove dishes. Manage stock and pricing.</div>
+    <span class="card-port">:8080 / admin.html</span>
+  </a>
+
+  <a class="card" href="http://localhost:8080/kitchen.html" target="_blank">
+    <div class="card-icon">👨‍🍳</div>
+    <div class="card-title">Kitchen Display</div>
+    <div class="card-desc">Live view of incoming orders for kitchen staff.</div>
+    <span class="card-port">:8080 / kitchen.html</span>
+  </a>
+
+  <a class="card" href="http://localhost:8080/demo-role-board.html" target="_blank">
+    <div class="card-icon">🎭</div>
+    <div class="card-title">Demo Role Board</div>
+    <div class="card-desc">Select a demo role to test the system end-to-end.</div>
+    <span class="card-port">:8080 / demo-role-board.html</span>
+  </a>
+
+  <!-- ── System 4: Wallet & Order (Us) ── -->
+  <div class="section-label">
+    <span class="dot blue"></span>System 4 — Wallet &amp; Order Service &nbsp;·&nbsp; port 8082 / 8084
+  </div>
+
+  <a class="card" href="http://localhost:8082/index.html" target="_blank">
+    <div class="card-icon">💳</div>
+    <div class="card-title">Wallet &amp; Order Management</div>
+    <div class="card-desc">Top-up wallet, admin recharge/deduct, create orders, update order status.</div>
+    <span class="card-port">:8082 / index.html</span>
+  </a>
+
+  <!-- ── System 5: Pickup (Teammate) ── -->
+  <div class="section-label">
+    <span class="dot purple"></span>System 5 — Pickup Service &nbsp;·&nbsp; port 8085
+  </div>
+
+  <a class="card" href="http://localhost:8085/api/pickups/overdue" target="_blank">
+    <div class="card-icon">🔔</div>
+    <div class="card-title">Overdue Pickups (API)</div>
+    <div class="card-desc">JSON list of all orders past their expected pickup time.</div>
+    <span class="card-port">:8085 / api/pickups/overdue</span>
+  </a>
+
+  <a class="card" href="http://localhost:8085/api/pickups/unnotified" target="_blank">
+    <div class="card-icon">📋</div>
+    <div class="card-title">Unnotified Pickups (API)</div>
+    <div class="card-desc">JSON list of pickup records where admin has not been notified yet.</div>
+    <span class="card-port">:8085 / api/pickups/unnotified</span>
+  </a>
+
+  <!-- ── API Reference ── -->
+  <div class="section-label">
+    <span class="dot orange"></span>API Quick Reference
+  </div>
+
+  <div class="card" style="cursor:default">
+    <div class="card-icon">📖</div>
+    <div class="card-title">Service Ports</div>
+    <div class="card-desc" style="font-family:monospace; line-height:2">
+      8080 &nbsp; Alice — Menu<br>
+      8082 &nbsp; Wallet Service<br>
+      8084 &nbsp; Order Service<br>
+      8085 &nbsp; Pickup Service
+    </div>
+  </div>
+
+  <div class="card" style="cursor:default">
+    <div class="card-icon">🗄️</div>
+    <div class="card-title">Databases</div>
+    <div class="card-desc" style="font-family:monospace; line-height:2">
+      canteen_db &nbsp;&nbsp;&nbsp; postgres / Admin12345<br>
+      &nbsp;&nbsp;→ Alice + Pickup<br>
+      restaurant_pos &nbsp; pos_admin / 123456<br>
+      &nbsp;&nbsp;→ Wallet + Order
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

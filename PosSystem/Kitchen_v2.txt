@@ -1,0 +1,230 @@
+================================================================
+校園餐廳 POS 系統 — 資料模型 v2
+================================================================
+更新日期：2026-05-28
+變更摘要：
+  1. 修正原 v1 共 8 項瑕疵（拼字、命名、結構、索引等）
+  2. 新增 Carts 表（Cart 併入 Checkout Service）
+  3. 標註微服務邊界 [Identity] / [Wallet] / [Menu] / [Checkout] / [Pickup]
+  4. Dishes / Drinks 的 category 改名為 special_request（語意更精準）
+
+================================================================
+關聯圖（ER Relationships）
+================================================================
+
+[Identity]
+USERS ||--o| Students        : "一對一（可選）"
+USERS ||--o| Teachers        : "一對一（可選）"
+USERS ||--o{ Admin_Users     : "一對多（管理身分）"
+USERS ||--o{ Kitchen_Users   : "一對多（廚房身分）"
+
+[Wallet]
+USERS ||--|| Wallets                            : "一人一錢包"
+Wallets ||--o{ Wallet_Transactions              : "錢包流水"
+Admin_Users ||--o{ Wallet_Transactions          : "經辦人"
+
+[Checkout]
+USERS   ||--o{ Carts                : "進行中的購物車"
+Menus   ||--o{ Carts                : "購物車品項"
+USERS   ||--o{ Orders               : "已成立訂單"
+Orders  ||--o{ Order_Items          : "訂單明細"
+Menus   ||--o{ Order_Items          : "對應套餐"
+
+[Pickup]
+Order_Items ||--o| Meal_Pickups     : "每個訂單品項一筆核銷"
+Admin_Users ||--o{ Meal_Pickups     : "核銷經辦人"
+
+[Menu]
+Dishes        ||--o{ Menus          : "主菜"
+Drinks        ||--o{ Menus          : "飲品"
+Kitchen_Users ||--o{ Menus          : "建立廚房"
+Admin_Users   ||--o{ Menus          : "稽核行政"
+
+
+================================================================
+[Identity Service]  身分認證服務
+================================================================
+
+USERS {
+    user_id          PK
+    password_hash
+    phone            UNIQUE
+    created_at
+    updated_at
+    is_deleted       (Soft Delete)
+    deleted_at
+}
+
+Students {
+    student_id       PK
+    user_id          FK -> USERS.user_id
+    student_no       UNIQUE
+}
+
+Teachers {
+    teacher_id       PK
+    user_id          FK -> USERS.user_id
+    teacher_no       UNIQUE
+}
+
+Admin_Users {
+    admin_id         PK
+    username         UNIQUE
+    phone
+    created_at
+}
+
+Kitchen_Users {
+    kitchen_id       PK
+    vendor_name
+    phone
+    created_at
+}
+
+
+================================================================
+[Wallet Service]  錢包金流服務（獨立，可 SaaS）
+================================================================
+
+Wallets {
+    wallet_id        PK
+    user_id          FK -> USERS.user_id  UNIQUE
+    balance          DECIMAL(10,2) DEFAULT 0
+    created_at
+    updated_at
+}
+
+Wallet_Transactions {
+    transaction_id   PK
+    wallet_id        FK -> Wallets.wallet_id     ← v2: 改以 Wallet 為主軸
+    admin_id         FK -> Admin_Users.admin_id  ← 經辦人（手動入賬時必填）
+    amount           DECIMAL(10,2)
+    type             ENUM(Recharge, Deduct, Refund)
+    description
+    idempotency_key  VARCHAR(64) UNIQUE          ← v2: 防止重複扣款
+    created_at
+    -- Indexes: wallet_id, created_at, admin_id
+}
+
+
+================================================================
+[Menu Service]  菜單庫存服務
+================================================================
+
+Dishes {
+    dish_id          PK
+    name
+    price            DECIMAL(8,2)
+    picture
+    special_request  (例：少油 / 不要海鮮 / 飯量減半)         ← v2: 原 category，改名語意更精準
+    is_deleted
+}
+
+Drinks {
+    drinks_id        PK
+    name
+    price            DECIMAL(8,2)
+    picture
+    special_request  (例：走甜 / 少冰 / 半糖)                 ← v2: 原 category，改名語意更精準
+    is_deleted
+}
+
+Menus {
+    menu_id          PK
+    dish_id          FK -> Dishes.dish_id
+    drinks_id        FK -> Drinks.drinks_id
+    kitchen_id       FK -> Kitchen_Users.kitchen_id
+    admin_id         FK -> Admin_Users.admin_id
+    supply_time      TIME            (預計供餐時間，對應 Meal_Pickups.expected_time)
+    initial_stock    INT             (今日備餐總數，例：100)
+    available_stock  INT             (剩餘可購買 = stock - 已售)
+    is_sold_out      BOOLEAN DEFAULT 0
+    booking_open     TIME            (例：18:00)
+    booking_close    TIME            (例：11:00)
+    meal_type        ENUM(Monday..Saturday)
+    created_at
+    -- Indexes: meal_type, is_sold_out, kitchen_id
+
+
+================================================================
+[Checkout Service]  結帳服務（Cart + Order 合併）
+================================================================
+
+Carts {                                                   ← v2: 新增表
+    cart_id          PK
+    user_id          FK -> USERS.user_id
+    menu_id          FK -> Menus.menu_id
+    quantity         INT
+    special_note     VARCHAR(200)                          (例：不要海鮮)
+    created_at
+    updated_at                                             (用以判斷棄單)
+    -- Indexes: user_id, updated_at
+    -- Storage: Redis 為主（24hr TTL），同步落 PostgreSQL 作棄單分析
+}
+
+Orders {                                                  ← v2: 修正拼字（原 Oders）
+    order_id         PK
+    user_id          FK -> USERS.user_id
+    total_amt        DECIMAL(10,2)
+    total_qty        INT                                   (此訂單套餐總數，用以判斷是否觸發訂金)
+    deposit_amt      DECIMAL(8,2)                          (Qty>=4 時 = 50，否則 = 0)
+    order_status     ENUM(Pending_Pay, Deposit_Paid, Fully_Paid, Complete, Cancelled)
+    created_at
+    -- Indexes: user_id, order_status, created_at
+}
+
+Order_Items {
+    item_id          PK
+    order_id         FK -> Orders.order_id
+    menu_id          FK -> Menus.menu_id
+    quantity         INT
+    pickup_status    ENUM(Pending, Picked_Up)
+    special_note     VARCHAR(200)                          (敏感，例：不要海鮮)
+    -- Indexes: order_id, menu_id, pickup_status
+}
+
+
+================================================================
+[Pickup Service]  取餐核銷服務
+================================================================
+
+Meal_Pickups {
+    pickup_id        PK
+    item_id          FK -> Order_Items.item_id  UNIQUE
+    admin_id         FK -> Admin_Users.admin_id              (核銷經辦人)
+    method           VARCHAR(8)                              (手機末四碼 + 訂單號末三碼)  ← v2: 加強驗證
+    expected_time    TIMESTAMP                               (預計取餐時間，例：12:00)
+    actual_time      TIMESTAMP NULL                          (實際取餐時間，沒來則 NULL)
+    admin_notified   BOOLEAN DEFAULT 0                       (0 = 未通知, 1 = 已通知 Admin)
+    created_at
+    -- Indexes: expected_time, admin_notified, item_id
+}
+
+
+================================================================
+v2 修正項目對照表
+================================================================
+#  項目                                狀態
+-- ----------------------------------- ----
+1  Oders → Orders 拼字修正             ✅
+2  Wallets 表補結尾 } / Wallet ID 空格 ✅（統一 snake_case）
+3  Wallet_Transactions 以 Wallets 為主 ✅
+4  Menus 拆 Menu_Items 之擴充          ⏳ 留待未來（依套餐組合需求啟動）
+5  Special_Note 限長度 200             ✅
+6  Meal_Pickups.method 加強驗證        ✅（手機末四碼 + 訂單號末三碼）
+7  時區 (UTC) 與索引                   ✅（各表已標示）
+8  Soft Delete (is_deleted/deleted_at) ✅（已加入 USERS / Dishes / Drinks）
+9  新增 Carts 表（Cart Service）        ✅
+10 微服務邊界標註                       ✅（[Identity] / [Wallet] / [Menu] / [Checkout] / [Pickup]）
+11 category → special_request 改名      ✅（Dishes / Drinks 兩表，語意更貼近實際用途）
+
+
+================================================================
+通用設計規範
+================================================================
+* 所有 created_at / updated_at 使用 UTC，前端依時區轉換
+* 所有 PK 採用 BIGINT 或 UUID（依服務性質選用）
+* 所有金額欄位採用 DECIMAL，禁用 FLOAT
+* 跨服務參照採用「服務 ID + 業務 ID」，禁直接 FK（如 USERS.user_id 於 Checkout Service 為「邏輯外鍵」，由應用層校驗）
+* 所有寫入操作須含 idempotency_key（特別是 Wallet 扣款）
+* Cart → Order 採 Saga Pattern：成功則 Cart 清空，失敗則自動補償
