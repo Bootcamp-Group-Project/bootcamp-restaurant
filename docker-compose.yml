@@ -1,19 +1,10 @@
 services:
   restaurant-app:
-    image: ${APP_IMAGE:-canteen-app}   # on EC2: set APP_IMAGE=yourname/canteen-app in .env
-    build: ./restaurant-app            # ignored when APP_IMAGE is set to a registry image
+    image: ${APP_IMAGE:-canteen-app}
+    env_file: .env
     environment:
       IMAGE_UPLOAD_DIR: /app/uploads/menu
       JAVA_TOOL_OPTIONS: -Xmx480m -Xms128m -XX:+UseContainerSupport
-      # Set these in Zeabur environment variables:
-      # SPRING_DATASOURCE_URL: jdbc:postgresql://...neon.tech/restaurant_db?sslmode=require
-      # SPRING_DATASOURCE_USERNAME: ...
-      # SPRING_DATASOURCE_PASSWORD: ...
-      # STRIPE_SECRET_KEY: sk_live_...
-      # JWT_SECRET: your-32-char-secret
-      # SECURITY_ADMIN_PASSWORD: strongpassword
-      # SECURITY_KITCHEN_PASSWORD: strongpassword
-      # GEMINI_API_KEY: ...
     volumes:
       - uploads_data:/app/uploads/menu
     restart: unless-stopped

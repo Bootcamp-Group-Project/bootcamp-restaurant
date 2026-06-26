@@ -1,11 +1,5 @@
 # Neon Database Setup & Migration
 
-> ⚠️ **DUMP FIRST, THEN CHANGE yml.**
-> Before touching `docker-compose.yml` or Zeabur env vars — dump your data first.
-> Changing the yml and redeploying will restart containers. If postgres data is not dumped yet, you may lose access to it.
-
-
-
 ## Quick Reference — Dump & Restore
 
 Run these in **Git Bash**:
@@ -135,3 +129,35 @@ You should see all tables: `base_users`, `dishes`, `drinks`, `menus`, `orders`, 
 ```powershell
 docker-compose up -d   # still works, postgres starts locally as before
 ```
+
+I've deployed a restaurant-db service on Zeabur. Here are the instructions: 
+
+## Connection String
+
+postgresql://root:WAN3s09qKIUSGk2D51O4CwRamhE768Py@43.156.108.60:32682/zeabur
+
+## PostgreSQL Connect Command
+
+psql "postgresql://root:WAN3s09qKIUSGk2D51O4CwRamhE768Py@43.156.108.60:32682/zeabur"
+
+## PostgreSQL username
+
+root
+
+## PostgresSQL password
+
+WAN3s09qKIUSGk2D51O4CwRamhE768Py
+
+## PostgresSQL database
+
+zeabur
+
+## PostgreSQL host
+
+43.156.108.60
+
+## PostgreSQL port
+
+32682
+
+
